@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const conversation_controller_1 = require("../controllers/conversation.controller");
+const auth_1 = require("../middleware/auth");
+const shop_controller_1 = require("../controllers/shop.controller");
+const user_controller_1 = require("../controllers/user.controller");
+const conversationRouter = (0, express_1.Router)();
+conversationRouter.post("/create-new-conversation", conversation_controller_1.createNewConverstion);
+conversationRouter.get("/get-all-conversation-seller/:id", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, conversation_controller_1.getAllShopConversationById);
+conversationRouter.get("/get-all-conversation-user/:id", user_controller_1.updateAccessToken, auth_1.isAuthenticated, conversation_controller_1.getAllUserConversationById);
+conversationRouter.put("/update-last-message/:id", conversation_controller_1.updateLastMessage);
+exports.default = conversationRouter;
