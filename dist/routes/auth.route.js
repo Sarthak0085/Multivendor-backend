@@ -12,13 +12,21 @@ authRouter.post("/create-user", user_controller_1.register);
 authRouter.post("/activation-user", user_controller_1.activateUser);
 // LOGIN USER
 authRouter.post("/login-user", user_controller_1.loginUser);
+// FORGOT PASSWORD
+authRouter.post("/forgot-password", user_controller_1.forgotPassword);
+// RESET PASSWORD
+authRouter.post("/reset-password", user_controller_1.resetPassword);
 /***************** PUBLIC SHOPS AUTH ROUTES ************/
 // CREATE SHOP
 authRouter.post("/create-shop", shop_controller_1.shopRegister);
 // ACTIVATE SHOP
 authRouter.post("/activation-shop", shop_controller_1.activateShop);
-//LOGIN SHOP
+// LOGIN SHOP
 authRouter.post("/login-shop", shop_controller_1.loginShop);
+// FORGOT SHOP PASSWORD
+authRouter.post("/forgot-shop-password", shop_controller_1.forgotShopPassword);
+// RESET SHOP PASSWORD
+authRouter.post("/reset-shop-password", shop_controller_1.resetShopPassword);
 /**************** PRIVATE USER ROUTES *************/
 // LOGOUT USER
 authRouter.get("/logout", auth_1.isAuthenticated, user_controller_1.updateAccessToken, user_controller_1.logoutUser);

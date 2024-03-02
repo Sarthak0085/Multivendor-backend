@@ -32,11 +32,14 @@ const couponRouter = (0, express_1.Router)();
 /********************* PUBLIC ROUTES ***********/
 // GET COUPON's VALUE BY NAME
 couponRouter.get("/get-coupon-value/:name", couponController.getCouponByName);
+couponRouter.get("/get-coupon/:couponId", couponController.getcouponById);
 /********************** PRIVATE SHOP ROUTES *********/
 // CREATE COUPON BY SHOP
 couponRouter.post("/create-coupon", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, couponController.createCoupon);
+// CREATE COUPON BY SHOP
+couponRouter.put("/update-coupon", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, couponController.updateCoupon);
 // GET ALL COUPONS OF SHOP BY SHOP_ID
-couponRouter.get("/get-coupon/:shopId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, couponController.getAllCouponsByShopId);
+couponRouter.get("/get-shop-coupon/:shopId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, couponController.getAllCouponsByShopId);
 // DELETE COUPON OF SHOP BY COUPON_ID
 couponRouter.delete("/delete-coupon/:couponId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, couponController.deleteShopCouponById);
 /********************* ADMIN ROUTES ****************/

@@ -11,23 +11,34 @@ interface ITransaction {
     updatedAt?: Date;
 }
 
+interface IWithdraw {
+    bankName: string;
+    bankCountry: string;
+    bankSwiftCode: string;
+    bankAccountNumber: number;
+    bankHolderName: string;
+    bankAddress: string;
+}
+
 export interface IShop extends Document {
     name: string;
     email: string;
     password: string;
     phoneNumber: string;
-    description?: string;
+    description: string;
     address: string;
-    role?: string;
+    role: string;
     avatar: {
         public_id: string;
         url: string;
     };
     pinCode: number;
-    withdrawMethod?: object;
-    availableBalance?: number;
+    withdrawMethod: object;
+    availableBalance: number;
+    isBlock: boolean;
     transactions: ITransaction[];
     passwordResetToken?: string;
+    resetOtp?: string;
     passwordResetExpires?: Date;
     SignAccessToken(): string;
     SignRefreshToken(): string;
@@ -77,14 +88,18 @@ const shopSchema = new mongoose.Schema<IShop>({
         type: String,
         default: "Seller",
     },
+    isBlock: {
+        type: Boolean,
+        default: false,
+    },
     avatar: {
         public_id: {
             type: String,
-            // required: true,
+            required: true,
         },
         url: {
             type: String,
-            // required: true,
+            required: true,
         },
     },
     pinCode: {
@@ -119,6 +134,7 @@ const shopSchema = new mongoose.Schema<IShop>({
         },
     ],
     passwordResetToken: String,
+    resetOtp: String,
     passwordResetExpires: Date,
 }, {
     timestamps: true,

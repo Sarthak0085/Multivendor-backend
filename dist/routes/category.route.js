@@ -18,5 +18,5 @@ categoryRouter.delete("/admin-delete/:id", user_controller_1.updateAccessToken, 
 //GET ALL CATEGORY BY ADMIN
 categoryRouter.get("/admin-get-all", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, category_controller_1.getallCategory);
 //GET CATEGORY BY ID BY ADMIN
-categoryRouter.get("/get/:id", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, category_controller_1.getCategory);
+categoryRouter.get("/get/:id", category_controller_1.getCategory);
 exports.default = categoryRouter;

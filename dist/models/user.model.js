@@ -7,7 +7,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const crypto_1 = __importDefault(require("crypto"));
 dotenv_1.default.config();
 const userSchema = new mongoose_1.default.Schema({
     fullName: {
@@ -77,15 +76,13 @@ const userSchema = new mongoose_1.default.Schema({
     avatar: {
         public_id: {
             type: String,
-            // required: true,
         },
         url: {
             type: String,
-            // required: true,
         },
-        // default: "https://res.cloudinary.com/dkzfopuco/image/upload/v1704392874/avatars/fgzkqxku7re8opvf8lsz.png",
     },
     passwordResetToken: String,
+    resetOtp: String,
     passwordResetExpires: Date,
 }, {
     timestamps: true,
@@ -114,15 +111,19 @@ userSchema.methods.SignRefreshToken = function () {
 userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcryptjs_1.default.compare(enteredPassword, this.password);
 };
-// reset password
+// reset password token
 userSchema.methods.createPasswordResetToken = function () {
-    const resetToken = crypto_1.default.randomBytes(32).toString("hex");
-    this.passwordResetToken = crypto_1.default
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
-    this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //10mins
-    return resetToken;
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const payload = {
+        userId: this._id,
+        otp: resetOtp,
+        expiresIn: '10m'
+    };
+    const resetToken = jsonwebtoken_1.default.sign(payload, process.env.RESET_SECRET);
+    this.passwordResetToken = resetToken;
+    this.resetOtp = resetOtp;
+    // this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+    return { resetToken, resetOtp };
 };
 const User = mongoose_1.default.model("User", userSchema);
 exports.default = User;

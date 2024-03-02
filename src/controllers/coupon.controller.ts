@@ -3,22 +3,6 @@ import { catchAsyncError } from "../middleware/catchAsyncError";
 import Coupon from "../models/coupon.model";
 import ErrorHandler from "../utils/ErrorHandler";
 
-// const express = require("express");
-// const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-// const Shop = require("../model/shop");
-// const ErrorHandler = require("../utils/ErrorHandler");
-// const { isSeller } = require("../middleware/auth");
-// const CoupounCode = require("../model/coupounCode");
-// const router = express.Router();
-
-// interface ICreateCoupon {
-
-// }
-
-// create coupoun code
-// router.post(
-//     "/create-coupon-code",
-//     isSeller,
 export const createCoupon = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const isCoupounCodeExists = await Coupon.find({
@@ -40,10 +24,22 @@ export const createCoupon = catchAsyncError(async (req: Request, res: Response, 
     }
 });
 
-// get all coupons of a shop
-// router.get(
-//     "/get-coupon/:id",
-//     isSeller,
+export const updateCoupon = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const couponCode = await Coupon.findOneAndUpdate({ name: req.body.name }, req.body, { new: true })
+        if (!couponCode) {
+            return next(new ErrorHandler("Coupon not found", 404));
+        }
+
+        res.status(201).json({
+            success: true,
+            couponCode,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, 400));
+    }
+});
+
 export const getAllCouponsByShopId = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const couponCodes = await Coupon.find({ shopId: req.params.shopId });
@@ -56,10 +52,6 @@ export const getAllCouponsByShopId = catchAsyncError(async (req: Request, res: R
     }
 });
 
-// delete coupoun code of a shop
-// router.delete(
-//     "/delete-coupon/:id",
-//     isSeller,
 export const deleteShopCouponById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const couponId = req.params.couponId as string;
@@ -77,10 +69,24 @@ export const deleteShopCouponById = catchAsyncError(async (req: Request, res: Re
     }
 });
 
+//get coupon by id
+export const getcouponById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { couponId } = req.params;
+        const couponCode = await Coupon.findById(couponId);
+        if (!couponCode) {
+            return next(new ErrorHandler("Coupon not found.", 404));
+        }
 
-// get coupon code value by its name
-// router.get(
-//     "/get-coupon-value/:name",
+        res.status(201).json({
+            success: true,
+            couponCode,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
 export const getCouponByName = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const name = req.params.name as string;

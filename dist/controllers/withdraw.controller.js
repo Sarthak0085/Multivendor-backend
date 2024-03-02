@@ -8,18 +8,6 @@ const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const withdraw_model_1 = __importDefault(require("../models/withdraw.model"));
 const shop_model_1 = __importDefault(require("../models/shop.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
-// const Shop = require("../model/shop");
-// const ErrorHandler = require("../utils/ErrorHandler");
-// const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-// const express = require("express");
-// const { isSeller, isAuthenticated, isAdmin } = require("../middleware/auth");
-// const Withdraw = require("../model/withdraw");
-// const sendMail = require("../utils/sendMail");
-// const router = express.Router();
-// create withdraw request --- only for seller
-// router.post(
-//     "/create-withdraw-request",
-//     isSeller,
 exports.createWithdrawRequest = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { amount } = req.body;

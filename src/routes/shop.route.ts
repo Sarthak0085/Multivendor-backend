@@ -30,6 +30,9 @@ shopRouter.delete("/delete-withdraw-method", shopController.updateSellerAccessTo
 // GET ALL SHOPS BY ADMIN
 shopRouter.get("/admin-all-sellers", updateAccessToken, isAuthenticated, isAdmin, shopController.getAllShopsByAdmin);
 
+// Block/ UNBlock SHOP BY ADMIN
+shopRouter.put("/admin-update/:shopId", updateAccessToken, isAuthenticated, isAdmin, shopController.updateShopByAdmin);
+
 // DELETE SHOP BY ADMIN
 shopRouter.delete("/admin-delete-shop/:id", updateAccessToken, isAuthenticated, isAdmin, shopController.deleteShopByAdmin);
 

@@ -8,8 +8,9 @@ dotenv.config();
 interface EmailOptions {
     email: string,
     subject: string,
-    template: string,
-    data: { [key: string]: any }
+    template?: string,
+    message?: string,
+    data?: { [key: string]: any }
 }
 
 const sendEmail = async (options: EmailOptions): Promise<void> => {
@@ -23,22 +24,31 @@ const sendEmail = async (options: EmailOptions): Promise<void> => {
         }
     });
 
-    const { email, subject, template, data } = options;
+    const { email, subject, template, data, message } = options;
 
-    //get the path of email template file
-    const templatePath = path.join(__dirname, "../mails", template);
+    if (template && data) {
+        //get the path of email template file
+        const templatePath = path.join(__dirname, "../mails", template);
 
-    //Render the email template with ejs
-    const html: string = await ejs.renderFile(templatePath, data);
+        //Render the email template with ejs
+        const html: string = await ejs.renderFile(templatePath, data);
 
-    const mailOptions = {
-        from: process.env.SMTP_MAIL,
-        to: email,
-        subject,
-        html
+        const mailOptions = {
+            from: process.env.SMTP_MAIL,
+            to: email,
+            subject,
+            html,
+        }
+        await transporter.sendMail(mailOptions);
+    } else {
+        const mailOptions = {
+            from: process.env.SMTP_MAIL,
+            to: email,
+            subject,
+            message
+        }
+        await transporter.sendMail(mailOptions);
     }
-
-    await transporter.sendMail(mailOptions);
 }
 
 export default sendEmail;

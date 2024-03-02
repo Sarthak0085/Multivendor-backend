@@ -37,16 +37,31 @@ exports.addNewCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
 // update category by admin
 exports.updateCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     const { id } = req.params;
+    const { title, image } = req.body;
     try {
-        const updatedCategory = await category_model_1.default.findByIdAndUpdate(id, req.body, {
-            new: true,
-        });
-        if (!updatedCategory) {
+        const category = await category_model_1.default.findById(id);
+        if (!category) {
             return next(new ErrorHandler_1.default("Category not found", 404));
         }
+        if (image) {
+            // Upload new image to Cloudinary
+            const myCloud = await cloudinary_1.default.v2.uploader.upload(image, {
+                folder: "category_images",
+                width: 150
+            });
+            await cloudinary_1.default.v2.uploader.destroy(category.image.public_id);
+            category.image = {
+                public_id: myCloud.public_id,
+                url: myCloud.secure_url
+            };
+        }
+        if (title) {
+            category.title = title;
+        }
+        await category.save();
         res.status(201).json({
             success: true,
-            updatedCategory
+            updatedCategory: category
         });
     }
     catch (error) {
@@ -72,14 +87,15 @@ exports.deleteCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
 });
 // get category by id
 exports.getCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    const { id } = req.params;
     try {
-        const getCategory = await category_model_1.default.findById(id);
-        if (!getCategory)
-            res.status(201).json({
-                success: true,
-                getCategory
-            });
+        const getCategory = await category_model_1.default.findById(req.params.id);
+        if (!getCategory) {
+            return next(new ErrorHandler_1.default("Category not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            category: getCategory
+        });
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 400));
@@ -88,7 +104,7 @@ exports.getCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
 // get all category
 exports.getallCategory = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const getallCategory = await category_model_1.default.find().sort({ createdAt: -1, updatedAt: -1 });
+        const getallCategory = await category_model_1.default.find().sort({ createdAt: 1, updatedAt: 1 });
         res.status(201).json({
             success: true,
             getallCategory

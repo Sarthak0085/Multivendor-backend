@@ -54,20 +54,18 @@ export const createProduct = catchAsyncError(async (req: Request, res: Response,
 // update product
 export const updateProduct = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const productId = req.params.productId;
-        const updatedData = req.body;
+        const productId = req.body.productId;
+        console.log(req.body);
 
-        // Check if the product exists
+        const updatedData = req.body;
         const product = await Product.findById(productId);
         if (!product) {
             return next(new ErrorHandler("Product not found", 404));
         }
-
-        // Update the product data
-        if (updatedData.images) {
+        if (req.body.images) {
             // Upload new images to cloudinary and update image links
             const newImagesLinks = [];
-            for (let i = 0; i < updatedData.images.length; i++) {
+            for (let i = 0; i < req.body.images.length; i++) {
                 const result = await cloudinary.v2.uploader.upload(updatedData.images[i], {
                     folder: "products",
                 });
@@ -78,6 +76,9 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
             }
             updatedData.images = [...product.images, ...newImagesLinks]; // Combine existing and new images
         }
+
+
+        console.log(updatedData);
 
         // Handle image removal
         if (product.images && updatedData.images) {
@@ -90,11 +91,12 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
             }
         }
 
-        // Update other fields
+        // // Update other fields
         product.set(updatedData);
 
-        // Save the updated product
+        // // Save the updated product
         await product.save();
+        // const updatedProduct = await Product.findByIdAndUpdate(productId, productData, { new: true })
 
         res.status(200).json({
             success: true,
@@ -106,13 +108,11 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
     }
 });
 
-
-// get all products of a shop
-// router.get(
-//     "/get-all-products-shop/:id",
 export const getAllProductsOfShopById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const products = await Product.find({ shopId: req.params.id });
+        const products = await Product.find({ shopId: req.params.id }).sort({
+            createdAt: 1, updatedAt: 1,
+        });
 
         res.status(201).json({
             success: true,
@@ -123,10 +123,22 @@ export const getAllProductsOfShopById = catchAsyncError(async (req: Request, res
     }
 });
 
-// delete product of a shop
-// router.delete(
-//     "/delete-shop-product/:id",
-//     isSeller,
+export const getProductById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { productId } = req.params;
+        const product = await Product.findById(productId);
+        if (!product) {
+            return next(new ErrorHandler("product not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            product,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
 export const deleteShopProduct = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const product = await Product.findById(req.params.id);
@@ -135,9 +147,9 @@ export const deleteShopProduct = catchAsyncError(async (req: Request, res: Respo
             return next(new ErrorHandler("Product not found", 404));
         }
 
-        for (let i = 0; 1 < product.images.length; i++) {
+        for (let i = 0; i < product.images.length; i++) {
             await cloudinary.v2.uploader.destroy(
-                product.images[i].public_id
+                product?.images[i]?.public_id
             );
         }
 
@@ -152,12 +164,10 @@ export const deleteShopProduct = catchAsyncError(async (req: Request, res: Respo
     }
 });
 
-// get all products
-// router.get(
-//     "/get-all-products",
+
 export const getAllProducts = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const products = await Product.find().sort({ createdAt: -1, updatedAt: -1 });
+        const products = await Product.find().sort({ createdAt: 1, updatedAt: 1, });
 
         res.status(201).json({
             success: true,
@@ -168,10 +178,6 @@ export const getAllProducts = catchAsyncError(async (req: Request, res: Response
     }
 });
 
-// review for a product
-// router.put(
-//     "/create-new-review",
-//     isAuthenticated,
 export const createReview = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { user, rating, comment, productId, orderId } = req.body;
@@ -229,19 +235,30 @@ export const createReview = catchAsyncError(async (req: Request, res: Response, 
 });
 
 
-// all products --- for admin
-// router.get(
-//     "/admin-all-products",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 export const getAllProductsByAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const products = await Product.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
             products,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
+export const adminDeleteProductById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { productId } = req.params;
+        const product = await Product.findByIdAndDelete(productId);
+        if (!product) {
+            return next(new ErrorHandler("Product not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            message: "Product deleted successfully",
         });
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 500));

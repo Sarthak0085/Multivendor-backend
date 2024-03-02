@@ -45,6 +45,8 @@ userRouter.get("/user-info/:id", userController.updateAccessToken, auth_1.isAuth
 /********************* ADMIN ROUTES **************/
 // GET ALL USERS BY ADMIN
 userRouter.get("/admin-all-users", userController.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, userController.getAllUsers);
+// BLOCK/ UNBLOCK OR UPDATE USER ROLE BY ADMIN
+userRouter.put("/admin-update/:userId", userController.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, userController.updateUserByAdmin);
 // DELETE USER BY ADMIN
 userRouter.delete("/admin-delete-user/:id", userController.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, userController.deleteUserById);
 exports.default = userRouter;

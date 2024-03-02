@@ -20,6 +20,9 @@ const productSchema = new mongoose_1.default.Schema({
     tags: {
         type: String,
     },
+    brand: {
+        type: String,
+    },
     size: {
         type: String,
     },

@@ -2,11 +2,13 @@ import { Router } from "express";
 import { updateSellerAccessToken } from "../controllers/shop.controller";
 import { isAdmin, isAuthenticated, isSeller } from "../middleware/auth";
 import {
+    adminDeleteProductById,
     createProduct,
     createReview,
     deleteShopProduct,
     getAllProducts,
     getAllProductsOfShopById,
+    getProductById,
     updateProduct
 } from "../controllers/product.controller";
 import { updateAccessToken } from "../controllers/user.controller";
@@ -32,7 +34,11 @@ productRouter.put("/create-new-review", updateAccessToken, isAuthenticated, crea
 // CREATE NEW PRODUCT BY SELLER
 productRouter.post("/create", updateSellerAccessToken, isSeller, createProduct);
 
-productRouter.put("/update/:productId", updateSellerAccessToken, isSeller, updateProduct);
+// GET PRODUCT BY PRODUCT ID BY SELLER
+productRouter.get("/get-product/:productId", updateSellerAccessToken, isSeller, getProductById)
+
+// UPDATE PRODUCT BY PRODUCT ID BY SELLER
+productRouter.put("/update", updateSellerAccessToken, isSeller, updateProduct);
 
 // DELETE SHOP PRODUCT BY PRODUCT ID
 productRouter.delete("/delete-shop-product/:id", updateSellerAccessToken, isSeller, deleteShopProduct);
@@ -41,6 +47,9 @@ productRouter.delete("/delete-shop-product/:id", updateSellerAccessToken, isSell
 
 // ADMIN GET ALL PRODUCTS
 productRouter.get("/admin-get-all", updateAccessToken, isAuthenticated, isAdmin, getAllProducts);
+
+// ADMIN DELETE PRODUCT BY PRODUCT ID
+productRouter.delete("/admin-delete/:productId", updateAccessToken, isAuthenticated, isAdmin, adminDeleteProductById);
 
 export default productRouter;
 

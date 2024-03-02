@@ -3,23 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCouponByAdmin = exports.getAllCouponsByAdmin = exports.getCouponByName = exports.deleteShopCouponById = exports.getAllCouponsByShopId = exports.createCoupon = void 0;
+exports.deleteCouponByAdmin = exports.getAllCouponsByAdmin = exports.getCouponByName = exports.getcouponById = exports.deleteShopCouponById = exports.getAllCouponsByShopId = exports.updateCoupon = exports.createCoupon = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const coupon_model_1 = __importDefault(require("../models/coupon.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
-// const express = require("express");
-// const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-// const Shop = require("../model/shop");
-// const ErrorHandler = require("../utils/ErrorHandler");
-// const { isSeller } = require("../middleware/auth");
-// const CoupounCode = require("../model/coupounCode");
-// const router = express.Router();
-// interface ICreateCoupon {
-// }
-// create coupoun code
-// router.post(
-//     "/create-coupon-code",
-//     isSeller,
 exports.createCoupon = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const isCoupounCodeExists = await coupon_model_1.default.find({
@@ -38,10 +25,21 @@ exports.createCoupon = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
         return next(new ErrorHandler_1.default(error, 400));
     }
 });
-// get all coupons of a shop
-// router.get(
-//     "/get-coupon/:id",
-//     isSeller,
+exports.updateCoupon = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const couponCode = await coupon_model_1.default.findOneAndUpdate({ name: req.body.name }, req.body, { new: true });
+        if (!couponCode) {
+            return next(new ErrorHandler_1.default("Coupon not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            couponCode,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error, 400));
+    }
+});
 exports.getAllCouponsByShopId = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const couponCodes = await coupon_model_1.default.find({ shopId: req.params.shopId });
@@ -54,10 +52,6 @@ exports.getAllCouponsByShopId = (0, catchAsyncError_1.catchAsyncError)(async (re
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// delete coupoun code of a shop
-// router.delete(
-//     "/delete-coupon/:id",
-//     isSeller,
 exports.deleteShopCouponById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const couponId = req.params.couponId;
@@ -74,9 +68,23 @@ exports.deleteShopCouponById = (0, catchAsyncError_1.catchAsyncError)(async (req
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// get coupon code value by its name
-// router.get(
-//     "/get-coupon-value/:name",
+//get coupon by id
+exports.getcouponById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const { couponId } = req.params;
+        const couponCode = await coupon_model_1.default.findById(couponId);
+        if (!couponCode) {
+            return next(new ErrorHandler_1.default("Coupon not found.", 404));
+        }
+        res.status(201).json({
+            success: true,
+            couponCode,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 400));
+    }
+});
 exports.getCouponByName = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const name = req.params.name;

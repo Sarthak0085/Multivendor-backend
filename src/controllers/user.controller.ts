@@ -100,6 +100,7 @@ interface IActivationRequest {
     activation_code: string,
 }
 
+// activate user
 export const activateUser = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { activation_token, activation_code } = req.body as IActivationRequest;
@@ -295,10 +296,6 @@ export const updateAccessToken = catchAsyncError(async (req: Request, res: Respo
 //     })
 // );
 
-// // load user
-// router.get(
-//     "/getuser",
-//     isAuthenticated,
 // get user
 export const getUser = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -311,101 +308,132 @@ export const getUser = catchAsyncError(async (req: Request, res: Response, next:
 
 
 // // forgot password
-// export const forgotPassword = CatchAsyncError(async (req, res, next) => {
-//     const { email } = req.body
+export const forgotPassword = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body
 
-//     const user = await userModel.findOne({ email })
+    const user = await User.findOne({ email })
 
-//     if (!user) {
-//         return next(new ErrorHandler("User Not found with this Email. Please Register first", 401));
-//     }
+    if (!user) {
+        return next(new ErrorHandler("User Not found with this Email. Please Register first", 401));
+    }
 
-//     const resetToken = user.createPasswordResetToken()
-//     user.save()
+    const resetToken = createResetToken(user);
+    user.save();
+    const activationCode = resetToken.resetOtp;
 
-//     const resetUrl = `http://localhost:3000/reset-password/${resetToken}`
+    console.log("Reset: ", resetToken);
 
-//     const message = `Forgot Password? Click on this this link to reset your Password: ${resetUrl}`
+    const data = { user: { name: user.fullName }, activationCode };
 
-//     try {
-//         await sendEmail({
-//             email: user.email,
-//             subject: "Your Password reset token. (valid for 10mins)",
-//             message,
-//         })
+    const html = await ejs.renderFile(path.join(__dirname, "../mails/activationMail.ejs"), data);
 
-//         res.status(200).json({
-//             message: "Token Sent to email!",
-//         })
-//     } catch (error) {
-//         user.passwordResetToken = undefined
-//         user.passwordResetExpires = undefined
-//         user.save()
-//         console.log(error)
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: "Reset Password",
+            template: "activationMail.ejs",
+            data
+        });
 
-//         return next(new ErrorHandler(error.message, 500));
-//     }
-// })
 
-// //reset password
-// export const resetPassword = CatchAsyncError(async (req, res, next) => {
-//     try {
-//         const hashedToken = crypto
-//             .createHash("sha256")
-//             .update(req.params.resetToken)
-//             .digest("hex")
+        res.status(201).json({
+            success: true,
+            message: `Please check your email: ${user.email} to reset your password.`,
+            resetToken: resetToken.resetToken,
+        })
+    } catch (error: any) {
+        user.passwordResetToken = undefined
+        user.resetOtp = undefined;
+        user.save()
+        console.log(error)
 
-//         const user = await userModel.findOne({
-//             passwordResetToken: hashedToken,
-//             passwordResetExpires: { $gt: Date.now() },
-//         })
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
 
-//         if (user !== null) {
-//             user.password = req.body.password
-//             user.passwordResetToken = undefined
-//             user.passwordResetExpires = undefined
-//             user.save()
+interface ICreateResetToken {
+    resetOtp: string;
+    resetToken: string;
+    user: any
+}
 
-//             createToken(user, res, "10m")
+export const createResetToken = (user: any): ICreateResetToken => {
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetToken = jwt.sign({
+        user, resetOtp
+    }, process.env.RESET_SECRET as Secret, {
+        expiresIn: "10m"
+    });
 
-//             res.status(200).json({
-//                 success: true,
-//                 user
-//             })
-//         }
-//         else {
-//             return next(new ErrorHandler("Token Failed", 400));
-//         }
-//     } catch (error) {
-//         return next(new ErrorHandler(error.message, 500));
-//     }
-// });
+    user.passwordResetToken = resetToken;
+    user.resetOtp = resetOtp;
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000
 
-// // log out user
-// router.get(
-//     "/logout",
-//     catchAsyncErrors(async (req, res, next) => {
-//         try {
-//             res.cookie("token", null, {
-//                 expires: new Date(Date.now()),
-//                 httpOnly: true,
-//                 sameSite: "none",
-//                 secure: true,
-//             });
-//             res.status(201).json({
-//                 success: true,
-//                 message: "Log out successful!",
-//             });
-//         } catch (error) {
-//             return next(new ErrorHandler(error.message, 500));
-//         }
-//     })
-// );
+    return { resetOtp, resetToken, user };
+}
 
-// // update user info
-// router.put(
-//     "/update-user-info",
-//     isAuthenticated,
+interface IResetPasswordRequest {
+    reset_token: string;
+    reset_otp: string;
+    newPassword: string;
+}
+
+export const resetPassword = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { reset_token, newPassword, reset_otp } = req.body as IResetPasswordRequest;
+
+    if (!reset_token || reset_token === "") {
+        return next(new ErrorHandler("Reset Token Expires", 404));
+    }
+
+    if (!reset_otp || reset_otp === "" || !newPassword || newPassword === "" || !reset_token || reset_token === "") {
+        return next(new ErrorHandler("Please fill all the details", 401));
+    }
+
+    const payload: { user: IUser; resetOtp: string; resetToken: string; } = jwt.verify(reset_token, process.env.RESET_SECRET as string) as { user: IUser; resetOtp: string; resetToken: string; };
+
+    if (payload.resetOtp !== reset_otp) {
+        return next(new ErrorHandler('Invalid OTP', 400));
+    }
+
+    const user = await User.findById(payload.user._id);
+
+    if (!user) {
+        return next(new ErrorHandler('User not found', 404));
+    }
+
+    if (user.passwordResetExpires === undefined) {
+        return next(new ErrorHandler('Reset token has expired', 400));
+    }
+
+
+    // const expirationDate = new Date(user.passwordResetExpires);
+
+
+    // if (user?.passwordResetExpires && Date.now() > ) {
+    // }
+
+    try {
+        user.password = newPassword;
+
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        user.resetOtp = undefined;
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password Reset successful',
+        });
+
+    } catch (error: any) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        user.resetOtp = undefined;
+        user.save();
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
 interface IUpdateUserInfo {
     email: string;
@@ -413,6 +441,7 @@ interface IUpdateUserInfo {
     fullName: string;
 }
 
+// update user info
 export const updateUserInfo = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, phoneNumber, fullName } = req.body as IUpdateUserInfo;
@@ -438,21 +467,6 @@ export const updateUserInfo = catchAsyncError(async (req: Request, res: Response
 
         const updatedUser = await User.findByIdAndUpdate(userId, user, { new: true });
 
-
-        // const isPasswordValid = await user.comparePassword(password);
-
-        // if (!isPasswordValid) {
-        //     return next(
-        //         new ErrorHandler("Please provide the correct information", 400)
-        //     );
-        // }
-
-        // user.fullName = fullName || user.fullName;
-        // user.email = email || user.email;
-        // user.phoneNumber = phoneNumber || user.phoneNumber;
-
-        // await user.save();
-
         res.status(201).json({
             success: true,
             user: updatedUser,
@@ -462,16 +476,11 @@ export const updateUserInfo = catchAsyncError(async (req: Request, res: Response
     }
 });
 
-
-// // update user avatar
-// router.put(
-//     "/update-avatar",
-//     isAuthenticated,
-
 interface IupdateAvatar {
     avatar: string;
 }
 
+// update user avatar
 export const updateUserAvatar = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { avatar } = req.body as IupdateAvatar;
@@ -523,11 +532,7 @@ export const updateUserAvatar = catchAsyncError(async (req: Request, res: Respon
     }
 });
 
-
-// // update user addresses
-// router.put(
-//     "/update-user-addresses",
-//     isAuthenticated,
+// update user address
 export const updateUserAddress = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await User.findById(req.user?._id);
@@ -571,11 +576,7 @@ export const updateUserAddress = catchAsyncError(async (req: Request, res: Respo
     }
 });
 
-
-// // delete user address
-// router.delete(
-//     "/delete-user-address/:id",
-//     isAuthenticated,
+// delete user address
 export const deleteUserAddress = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user?._id;
@@ -601,10 +602,7 @@ interface IUpdatePassword {
     newPassword: string,
 }
 
-// // update user password
-// router.put(
-//     "/update-user-password",
-//     isAuthenticated,
+// update password
 export const updatePassword = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { oldPassword, newPassword } = req.body as IUpdatePassword;
@@ -639,9 +637,7 @@ export const updatePassword = catchAsyncError(async (req: Request, res: Response
     }
 });
 
-// // find user infoormation with the userId
-// router.get(
-//     "/user-info/:id",
+// get user info by id
 export const getUserInfoById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await User.findById(req.params.id);
@@ -655,15 +651,11 @@ export const getUserInfoById = catchAsyncError(async (req: Request, res: Respons
     }
 });
 
-// // all users --- for admin
-// router.get(
-//     "/admin-all-users",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+// get all users by admin
 export const getAllUsers = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const users = await User.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1,
         });
         res.status(201).json({
             success: true,
@@ -674,11 +666,23 @@ export const getAllUsers = catchAsyncError(async (req: Request, res: Response, n
     }
 });
 
-// // delete users --- admin
-// router.delete(
-//     "/delete-user/:id",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+// update user role or block/ unblock the user
+export const updateUserByAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.userId, req.body, { new: true });
+        if (!user) {
+            return next(new ErrorHandler("Shop not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            user,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
+// delete user by admin
 export const deleteUserById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await User.findById(req.params.id);

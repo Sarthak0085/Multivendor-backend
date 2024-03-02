@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllEventsByAdmin = exports.deleteShopEventById = exports.getAllEventsOfShopById = exports.getAllEvents = exports.createEvent = void 0;
+exports.adminDeleteEventById = exports.getAllEventsByAdmin = exports.deleteShopEventById = exports.getEventById = exports.getAllEventsOfShopById = exports.getAllEvents = exports.createEvent = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const shop_model_1 = __importDefault(require("../models/shop.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
@@ -56,7 +56,7 @@ exports.createEvent = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
 exports.getAllEvents = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const events = await event_model_1.default.find().sort({
-            createdAt: -1, updatedAt: -1
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
@@ -73,7 +73,7 @@ exports.getAllEvents = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
 exports.getAllEventsOfShopById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const shopId = req.params.shopId;
-        const events = await event_model_1.default.find({ shopId: shopId });
+        const events = await event_model_1.default.find({ shopId: shopId }).sort({ createdAt: 1, updatedAt: 1 });
         res.status(201).json({
             success: true,
             events,
@@ -83,9 +83,22 @@ exports.getAllEventsOfShopById = (0, catchAsyncError_1.catchAsyncError)(async (r
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// delete event of a shop
-// router.delete(
-//     "/delete-shop-event/:id",
+exports.getEventById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const { eventId } = req.params;
+        const event = await event_model_1.default.findById(eventId);
+        if (!event) {
+            return next(new ErrorHandler_1.default("Event not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            event,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
 exports.deleteShopEventById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const eventId = req.params.eventId;
@@ -106,19 +119,30 @@ exports.deleteShopEventById = (0, catchAsyncError_1.catchAsyncError)(async (req,
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// all events --- for admin
-// router.get(
-//     "/admin-all-events",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 exports.getAllEventsByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const events = await event_model_1.default.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
             events,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
+exports.adminDeleteEventById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const { eventId } = req.params;
+        const event = await event_model_1.default.findByIdAndDelete(eventId);
+        if (!event) {
+            return next(new ErrorHandler_1.default("Event not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            message: "Event deleted successfully",
         });
     }
     catch (error) {

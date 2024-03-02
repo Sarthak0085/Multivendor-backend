@@ -11,13 +11,18 @@ const couponRouter = Router();
 // GET COUPON's VALUE BY NAME
 couponRouter.get("/get-coupon-value/:name", couponController.getCouponByName);
 
+couponRouter.get("/get-coupon/:couponId", couponController.getcouponById);
+
 /********************** PRIVATE SHOP ROUTES *********/
 
 // CREATE COUPON BY SHOP
 couponRouter.post("/create-coupon", updateSellerAccessToken, isSeller, couponController.createCoupon);
 
+// CREATE COUPON BY SHOP
+couponRouter.put("/update-coupon", updateSellerAccessToken, isSeller, couponController.updateCoupon);
+
 // GET ALL COUPONS OF SHOP BY SHOP_ID
-couponRouter.get("/get-coupon/:shopId", updateSellerAccessToken, isSeller, couponController.getAllCouponsByShopId);
+couponRouter.get("/get-shop-coupon/:shopId", updateSellerAccessToken, isSeller, couponController.getAllCouponsByShopId);
 
 // DELETE COUPON OF SHOP BY COUPON_ID
 couponRouter.delete("/delete-coupon/:couponId", updateSellerAccessToken, isSeller, couponController.deleteShopCouponById);

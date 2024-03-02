@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import mongoose, { Document, Model } from "mongoose";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from "crypto";
 
 dotenv.config();
 
@@ -10,24 +9,25 @@ export interface IUser extends Document {
     fullName: string;
     email: string;
     password: string;
-    phoneNumber?: string; // Optional field
-    addresses?: {
+    phoneNumber: string;
+    addresses: {
         country: string;
         state: string;
         city: string;
         address1: string;
-        address2?: string; // Optional field
+        address2?: string;
         pinCode: number;
         addressType: string;
     }[];
-    role?: 'USER' | 'ADMIN';
+    role: 'USER' | 'ADMIN';
     isBlock: boolean;
-    avatar?: {
+    avatar: {
         public_id: string;
         url: string;
     };
-    passwordResetToken?: string; // Optional field
-    passwordResetExpires?: Date; // Optional field
+    passwordResetToken?: string;
+    resetOtp?: string;
+    passwordResetExpires?: Date;
     comparePassword: (password: string) => Promise<boolean>;
     SignAccessToken: () => string;
     SignRefreshToken: () => string;
@@ -104,15 +104,13 @@ const userSchema = new mongoose.Schema<IUser>({
     avatar: {
         public_id: {
             type: String,
-            // required: true,
         },
         url: {
             type: String,
-            // required: true,
         },
-        // default: "https://res.cloudinary.com/dkzfopuco/image/upload/v1704392874/avatars/fgzkqxku7re8opvf8lsz.png",
     },
     passwordResetToken: String,
+    resetOtp: String,
     passwordResetExpires: Date,
 }, {
     timestamps: true,
@@ -146,19 +144,24 @@ userSchema.methods.comparePassword = async function (enteredPassword: string): P
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// reset password
+// reset password token
 userSchema.methods.createPasswordResetToken = function () {
-    const resetToken = crypto.randomBytes(32).toString("hex")
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    this.passwordResetToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex")
+    const payload = {
+        userId: this._id,
+        otp: resetOtp,
+        expiresIn: '10m'
+    };
 
-    this.passwordResetExpires = Date.now() + 10 * 60 * 1000 //10mins
+    const resetToken = jwt.sign(payload, process.env.RESET_SECRET as string);
 
-    return resetToken;
-}
+    this.passwordResetToken = resetToken;
+    this.resetOtp = resetOtp;
+    // this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+    return { resetToken, resetOtp };
+};
 
 const User: Model<IUser> = mongoose.model("User", userSchema);
 

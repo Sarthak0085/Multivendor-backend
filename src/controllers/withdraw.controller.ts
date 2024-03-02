@@ -5,19 +5,6 @@ import Withdraw from "../models/withdraw.model";
 import Shop from "../models/shop.model";
 import ErrorHandler from "../utils/ErrorHandler";
 
-// const Shop = require("../model/shop");
-// const ErrorHandler = require("../utils/ErrorHandler");
-// const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-// const express = require("express");
-// const { isSeller, isAuthenticated, isAdmin } = require("../middleware/auth");
-// const Withdraw = require("../model/withdraw");
-// const sendMail = require("../utils/sendMail");
-// const router = express.Router();
-
-// create withdraw request --- only for seller
-// router.post(
-//     "/create-withdraw-request",
-//     isSeller,
 export const createWithdrawRequest = catchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
         try {

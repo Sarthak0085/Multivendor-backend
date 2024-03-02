@@ -9,6 +9,7 @@ interface IProduct extends Document {
     discountPrice?: number;
     size?: string | number;
     stock: number;
+    brand: string;
     colors: string[];
     images: {
         public_id: string;
@@ -24,7 +25,7 @@ interface IProduct extends Document {
     ratings?: number;
     shopId: string;
     shop: object;
-    sold_out?: number;
+    sold_out: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -43,6 +44,9 @@ const productSchema = new mongoose.Schema<IProduct>({
         required: [true, "Please enter your product category!"],
     },
     tags: {
+        type: String,
+    },
+    brand: {
         type: String,
     },
     size: {

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllProductsByAdmin = exports.createReview = exports.getAllProducts = exports.deleteShopProduct = exports.getAllProductsOfShopById = exports.updateProduct = exports.createProduct = void 0;
+exports.adminDeleteProductById = exports.getAllProductsByAdmin = exports.createReview = exports.getAllProducts = exports.deleteShopProduct = exports.getProductById = exports.getAllProductsOfShopById = exports.updateProduct = exports.createProduct = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const shop_model_1 = __importDefault(require("../models/shop.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
@@ -53,18 +53,17 @@ exports.createProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, 
 // update product
 exports.updateProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const productId = req.params.productId;
+        const productId = req.body.productId;
+        console.log(req.body);
         const updatedData = req.body;
-        // Check if the product exists
         const product = await product_model_1.default.findById(productId);
         if (!product) {
             return next(new ErrorHandler_1.default("Product not found", 404));
         }
-        // Update the product data
-        if (updatedData.images) {
+        if (req.body.images) {
             // Upload new images to cloudinary and update image links
             const newImagesLinks = [];
-            for (let i = 0; i < updatedData.images.length; i++) {
+            for (let i = 0; i < req.body.images.length; i++) {
                 const result = await cloudinary_1.default.v2.uploader.upload(updatedData.images[i], {
                     folder: "products",
                 });
@@ -75,6 +74,7 @@ exports.updateProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, 
             }
             updatedData.images = [...product.images, ...newImagesLinks]; // Combine existing and new images
         }
+        console.log(updatedData);
         // Handle image removal
         if (product.images && updatedData.images) {
             // Filter out images that are no longer present in the updated images array
@@ -85,10 +85,11 @@ exports.updateProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, 
                 await cloudinary_1.default.v2.uploader.destroy(removedImage.public_id);
             }
         }
-        // Update other fields
+        // // Update other fields
         product.set(updatedData);
-        // Save the updated product
+        // // Save the updated product
         await product.save();
+        // const updatedProduct = await Product.findByIdAndUpdate(productId, productData, { new: true })
         res.status(200).json({
             success: true,
             message: 'Product updated successfully',
@@ -99,12 +100,11 @@ exports.updateProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, 
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// get all products of a shop
-// router.get(
-//     "/get-all-products-shop/:id",
 exports.getAllProductsOfShopById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const products = await product_model_1.default.find({ shopId: req.params.id });
+        const products = await product_model_1.default.find({ shopId: req.params.id }).sort({
+            createdAt: 1, updatedAt: 1,
+        });
         res.status(201).json({
             success: true,
             products,
@@ -114,18 +114,30 @@ exports.getAllProductsOfShopById = (0, catchAsyncError_1.catchAsyncError)(async 
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// delete product of a shop
-// router.delete(
-//     "/delete-shop-product/:id",
-//     isSeller,
+exports.getProductById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const { productId } = req.params;
+        const product = await product_model_1.default.findById(productId);
+        if (!product) {
+            return next(new ErrorHandler_1.default("product not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            product,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
 exports.deleteShopProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const product = await product_model_1.default.findById(req.params.id);
         if (!product) {
             return next(new ErrorHandler_1.default("Product not found", 404));
         }
-        for (let i = 0; 1 < product.images.length; i++) {
-            await cloudinary_1.default.v2.uploader.destroy(product.images[i].public_id);
+        for (let i = 0; i < product.images.length; i++) {
+            await cloudinary_1.default.v2.uploader.destroy(product?.images[i]?.public_id);
         }
         await product_model_1.default.findByIdAndDelete(req.params.id);
         res.status(201).json({
@@ -137,12 +149,9 @@ exports.deleteShopProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         return next(new ErrorHandler_1.default(error, 400));
     }
 });
-// get all products
-// router.get(
-//     "/get-all-products",
 exports.getAllProducts = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const products = await product_model_1.default.find().sort({ createdAt: -1, updatedAt: -1 });
+        const products = await product_model_1.default.find().sort({ createdAt: 1, updatedAt: 1, });
         res.status(201).json({
             success: true,
             products,
@@ -152,10 +161,6 @@ exports.getAllProducts = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// review for a product
-// router.put(
-//     "/create-new-review",
-//     isAuthenticated,
 exports.createReview = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { user, rating, comment, productId, orderId } = req.body;
@@ -196,19 +201,30 @@ exports.createReview = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
         return next(new ErrorHandler_1.default(error, 400));
     }
 });
-// all products --- for admin
-// router.get(
-//     "/admin-all-products",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 exports.getAllProductsByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const products = await product_model_1.default.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
             products,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
+exports.adminDeleteProductById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const { productId } = req.params;
+        const product = await product_model_1.default.findByIdAndDelete(productId);
+        if (!product) {
+            return next(new ErrorHandler_1.default("Product not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            message: "Product deleted successfully",
         });
     }
     catch (error) {

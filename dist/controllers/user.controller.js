@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserById = exports.getAllUsers = exports.getUserInfoById = exports.updatePassword = exports.deleteUserAddress = exports.updateUserAddress = exports.updateUserAvatar = exports.updateUserInfo = exports.getUser = exports.updateAccessToken = exports.logoutUser = exports.loginUser = exports.activateUser = exports.createActivationToken = exports.register = void 0;
+exports.deleteUserById = exports.updateUserByAdmin = exports.getAllUsers = exports.getUserInfoById = exports.updatePassword = exports.deleteUserAddress = exports.updateUserAddress = exports.updateUserAvatar = exports.updateUserInfo = exports.resetPassword = exports.createResetToken = exports.forgotPassword = exports.getUser = exports.updateAccessToken = exports.logoutUser = exports.loginUser = exports.activateUser = exports.createActivationToken = exports.register = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const user_model_1 = __importDefault(require("../models/user.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
@@ -75,6 +75,7 @@ const createActivationToken = (user) => {
     return { activationCode, token };
 };
 exports.createActivationToken = createActivationToken;
+// activate user
 exports.activateUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { activation_token, activation_code } = req.body;
@@ -223,10 +224,6 @@ exports.updateAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, r
 //         }
 //     })
 // );
-// // load user
-// router.get(
-//     "/getuser",
-//     isAuthenticated,
 // get user
 exports.getUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
@@ -237,6 +234,95 @@ exports.getUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) 
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
+// // forgot password
+exports.forgotPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    const { email } = req.body;
+    const user = await user_model_1.default.findOne({ email });
+    if (!user) {
+        return next(new ErrorHandler_1.default("User Not found with this Email. Please Register first", 401));
+    }
+    const resetToken = (0, exports.createResetToken)(user);
+    user.save();
+    const activationCode = resetToken.resetOtp;
+    console.log("Reset: ", resetToken);
+    const data = { user: { name: user.fullName }, activationCode };
+    const html = await ejs_1.default.renderFile(path_1.default.join(__dirname, "../mails/activationMail.ejs"), data);
+    try {
+        await (0, sendMail_1.default)({
+            email: user.email,
+            subject: "Reset Password",
+            template: "activationMail.ejs",
+            data
+        });
+        res.status(201).json({
+            success: true,
+            message: `Please check your email: ${user.email} to reset your password.`,
+            resetToken: resetToken.resetToken,
+        });
+    }
+    catch (error) {
+        user.passwordResetToken = undefined;
+        user.resetOtp = undefined;
+        user.save();
+        console.log(error);
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
+const createResetToken = (user) => {
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetToken = jsonwebtoken_1.default.sign({
+        user, resetOtp
+    }, process.env.RESET_SECRET, {
+        expiresIn: "10m"
+    });
+    user.passwordResetToken = resetToken;
+    user.resetOtp = resetOtp;
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+    return { resetOtp, resetToken, user };
+};
+exports.createResetToken = createResetToken;
+exports.resetPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    const { reset_token, newPassword, reset_otp } = req.body;
+    if (!reset_token || reset_token === "") {
+        return next(new ErrorHandler_1.default("Reset Token Expires", 404));
+    }
+    if (!reset_otp || reset_otp === "" || !newPassword || newPassword === "" || !reset_token || reset_token === "") {
+        return next(new ErrorHandler_1.default("Please fill all the details", 401));
+    }
+    const payload = jsonwebtoken_1.default.verify(reset_token, process.env.RESET_SECRET);
+    if (payload.resetOtp !== reset_otp) {
+        return next(new ErrorHandler_1.default('Invalid OTP', 400));
+    }
+    const user = await user_model_1.default.findById(payload.user._id);
+    if (!user) {
+        return next(new ErrorHandler_1.default('User not found', 404));
+    }
+    if (user.passwordResetExpires === undefined) {
+        return next(new ErrorHandler_1.default('Reset token has expired', 400));
+    }
+    // const expirationDate = new Date(user.passwordResetExpires);
+    // if (user?.passwordResetExpires && Date.now() > ) {
+    // }
+    try {
+        user.password = newPassword;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        user.resetOtp = undefined;
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: 'Password Reset successful',
+        });
+    }
+    catch (error) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        user.resetOtp = undefined;
+        user.save();
+        return next(new ErrorHandler_1.default(error.message, 400));
+    }
+});
+// update user info
 exports.updateUserInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { email, phoneNumber, fullName } = req.body;
@@ -255,16 +341,6 @@ exports.updateUserInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
             user.phoneNumber = phoneNumber;
         }
         const updatedUser = await user_model_1.default.findByIdAndUpdate(userId, user, { new: true });
-        // const isPasswordValid = await user.comparePassword(password);
-        // if (!isPasswordValid) {
-        //     return next(
-        //         new ErrorHandler("Please provide the correct information", 400)
-        //     );
-        // }
-        // user.fullName = fullName || user.fullName;
-        // user.email = email || user.email;
-        // user.phoneNumber = phoneNumber || user.phoneNumber;
-        // await user.save();
         res.status(201).json({
             success: true,
             user: updatedUser,
@@ -274,6 +350,7 @@ exports.updateUserInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
+// update user avatar
 exports.updateUserAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { avatar } = req.body;
@@ -319,10 +396,7 @@ exports.updateUserAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, re
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// // update user addresses
-// router.put(
-//     "/update-user-addresses",
-//     isAuthenticated,
+// update user address
 exports.updateUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const user = await user_model_1.default.findById(req.user?._id);
@@ -353,10 +427,7 @@ exports.updateUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// // delete user address
-// router.delete(
-//     "/delete-user-address/:id",
-//     isAuthenticated,
+// delete user address
 exports.deleteUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const userId = req.user?._id;
@@ -371,10 +442,7 @@ exports.deleteUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// // update user password
-// router.put(
-//     "/update-user-password",
-//     isAuthenticated,
+// update password
 exports.updatePassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { oldPassword, newPassword } = req.body;
@@ -401,9 +469,7 @@ exports.updatePassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// // find user infoormation with the userId
-// router.get(
-//     "/user-info/:id",
+// get user info by id
 exports.getUserInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const user = await user_model_1.default.findById(req.params.id);
@@ -416,15 +482,11 @@ exports.getUserInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// // all users --- for admin
-// router.get(
-//     "/admin-all-users",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+// get all users by admin
 exports.getAllUsers = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const users = await user_model_1.default.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1,
         });
         res.status(201).json({
             success: true,
@@ -435,11 +497,23 @@ exports.getAllUsers = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// // delete users --- admin
-// router.delete(
-//     "/delete-user/:id",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+// update user role or block/ unblock the user
+exports.updateUserByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const user = await user_model_1.default.findByIdAndUpdate(req.params.userId, req.body, { new: true });
+        if (!user) {
+            return next(new ErrorHandler_1.default("Shop not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            user,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
+// delete user by admin
 exports.deleteUserById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const user = await user_model_1.default.findById(req.params.id);

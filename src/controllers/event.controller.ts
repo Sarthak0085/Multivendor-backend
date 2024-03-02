@@ -57,7 +57,7 @@ export const createEvent = catchAsyncError(async (req: Request, res: Response, n
 export const getAllEvents = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const events = await Event.find().sort({
-            createdAt: -1, updatedAt: -1
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
@@ -74,7 +74,7 @@ export const getAllEvents = catchAsyncError(async (req: Request, res: Response, 
 export const getAllEventsOfShopById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const shopId = req.params.shopId
-        const events = await Event.find({ shopId: shopId });
+        const events = await Event.find({ shopId: shopId }).sort({ createdAt: 1, updatedAt: 1 });
 
         res.status(201).json({
             success: true,
@@ -85,9 +85,23 @@ export const getAllEventsOfShopById = catchAsyncError(async (req: Request, res: 
     }
 });
 
-// delete event of a shop
-// router.delete(
-//     "/delete-shop-event/:id",
+export const getEventById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { eventId } = req.params;
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return next(new ErrorHandler("Event not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            event,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
+
 export const deleteShopEventById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const eventId = req.params.eventId as string;
@@ -114,19 +128,30 @@ export const deleteShopEventById = catchAsyncError(async (req: Request, res: Res
     }
 });
 
-// all events --- for admin
-// router.get(
-//     "/admin-all-events",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 export const getAllEventsByAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const events = await Event.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1
         });
         res.status(201).json({
             success: true,
             events,
+        });
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
+export const adminDeleteEventById = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { eventId } = req.params;
+        const event = await Event.findByIdAndDelete(eventId);
+        if (!event) {
+            return next(new ErrorHandler("Event not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            message: "Event deleted successfully",
         });
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 500));

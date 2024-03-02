@@ -18,17 +18,28 @@ const sendEmail = async (options) => {
             pass: process.env.SMTP_PASS,
         }
     });
-    const { email, subject, template, data } = options;
-    //get the path of email template file
-    const templatePath = path_1.default.join(__dirname, "../mails", template);
-    //Render the email template with ejs
-    const html = await ejs_1.default.renderFile(templatePath, data);
-    const mailOptions = {
-        from: process.env.SMTP_MAIL,
-        to: email,
-        subject,
-        html
-    };
-    await transporter.sendMail(mailOptions);
+    const { email, subject, template, data, message } = options;
+    if (template && data) {
+        //get the path of email template file
+        const templatePath = path_1.default.join(__dirname, "../mails", template);
+        //Render the email template with ejs
+        const html = await ejs_1.default.renderFile(templatePath, data);
+        const mailOptions = {
+            from: process.env.SMTP_MAIL,
+            to: email,
+            subject,
+            html,
+        };
+        await transporter.sendMail(mailOptions);
+    }
+    else {
+        const mailOptions = {
+            from: process.env.SMTP_MAIL,
+            to: email,
+            subject,
+            message
+        };
+        await transporter.sendMail(mailOptions);
+    }
 };
 exports.default = sendEmail;

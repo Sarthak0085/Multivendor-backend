@@ -13,7 +13,7 @@ interface IOrder extends Document {
     user: object;
     userId: string;
     totalPrice: number;
-    status: 'Processing' | 'Delivered' | 'Shipping';
+    status: "Processing" | "Refund Success" | "Transferred to delivery partner" | "Received" | "Delivered" | "On the way" | "Shipping" | "Processing Refund";
     paymentInfo: IPaymentInfo;
     paidAt: Date;
     deliveredAt?: Date;
@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema<IOrder>({
     },
     status: {
         type: String,
-        enum: ["Processing", "Delivered", "Shipping"],
+        enum: ["Processing", "Refund Success", "Transferred to delivery partner", "Received", "Delivered", "On the way", "Shipping", "Processing Refund"],
         default: "Processing",
     },
     paymentInfo: {

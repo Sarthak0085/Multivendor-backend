@@ -47,14 +47,18 @@ const shopSchema = new mongoose_1.default.Schema({
         type: String,
         default: "Seller",
     },
+    isBlock: {
+        type: Boolean,
+        default: false,
+    },
     avatar: {
         public_id: {
             type: String,
-            // required: true,
+            required: true,
         },
         url: {
             type: String,
-            // required: true,
+            required: true,
         },
     },
     pinCode: {
@@ -89,6 +93,7 @@ const shopSchema = new mongoose_1.default.Schema({
         },
     ],
     passwordResetToken: String,
+    resetOtp: String,
     passwordResetExpires: Date,
 }, {
     timestamps: true,

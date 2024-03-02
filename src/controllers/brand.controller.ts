@@ -73,11 +73,15 @@ export const updateBrand = catchAsyncError(async (req: Request, res: Response, n
             }
         }
 
-        const updatedBrand = await Brand.findByIdAndUpdate(brandId, req.body, {
-            new: true,
-        });
+        // const updatedBrand = await Brand.findByIdAndUpdate(brandId, req.body, {
+        //     new: true,
+        // });
 
-        // await brandExist?.save();
+        if (req.body.title) {
+            brandExist.title = req.body.title;
+        }
+
+        await brandExist?.save();
 
         // if (!updateBrand) {
         //     return next(new ErrorHandler("Brand not found", 404));
@@ -85,7 +89,7 @@ export const updateBrand = catchAsyncError(async (req: Request, res: Response, n
 
         res.status(201).json({
             success: true,
-            updatedBrand
+            brandExist
         });
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 400));
@@ -114,11 +118,13 @@ export const getBrand = catchAsyncError(async (req: Request, res: Response, next
     const { id } = req.params;
     try {
         const getBrand = await Brand.findById(id);
-        if (!getBrand)
-            res.status(201).json({
-                success: true,
-                getBrand
-            });
+        if (!getBrand) {
+            return next(new ErrorHandler("Brand not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            getBrand
+        });
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 400));
     }
@@ -127,7 +133,7 @@ export const getBrand = catchAsyncError(async (req: Request, res: Response, next
 // get all brands
 export const getallBrand = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const getallBrand = await Brand.find();
+        const getallBrand = await Brand.find().sort({ createdAt: 1, updatedAt: 1 });
         res.status(201).json({
             success: true,
             getallBrand

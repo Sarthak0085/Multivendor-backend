@@ -70,16 +70,19 @@ exports.updateBrand = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
                 };
             }
         }
-        const updatedBrand = await brand_model_1.default.findByIdAndUpdate(brandId, req.body, {
-            new: true,
-        });
-        // await brandExist?.save();
+        // const updatedBrand = await Brand.findByIdAndUpdate(brandId, req.body, {
+        //     new: true,
+        // });
+        if (req.body.title) {
+            brandExist.title = req.body.title;
+        }
+        await brandExist?.save();
         // if (!updateBrand) {
         //     return next(new ErrorHandler("Brand not found", 404));
         // }
         res.status(201).json({
             success: true,
-            updatedBrand
+            brandExist
         });
     }
     catch (error) {
@@ -108,11 +111,13 @@ exports.getBrand = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next)
     const { id } = req.params;
     try {
         const getBrand = await brand_model_1.default.findById(id);
-        if (!getBrand)
-            res.status(201).json({
-                success: true,
-                getBrand
-            });
+        if (!getBrand) {
+            return next(new ErrorHandler_1.default("Brand not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            getBrand
+        });
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 400));
@@ -121,7 +126,7 @@ exports.getBrand = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next)
 // get all brands
 exports.getallBrand = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const getallBrand = await brand_model_1.default.find();
+        const getallBrand = await brand_model_1.default.find().sort({ createdAt: 1, updatedAt: 1 });
         res.status(201).json({
             success: true,
             getallBrand

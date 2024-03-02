@@ -5,7 +5,6 @@ import ErrorHandler from "../utils/ErrorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { redis } from "../utils/redis";
 
-dotenv.config();
 
 export const isAuthenticated = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const access_token = req.cookies.access_token;
@@ -38,7 +37,12 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
         return next(new ErrorHandler("Please login to access this", 400));
     }
 
+    console.log(seller_access_token);
+
+
     const decoded = jwt.verify(seller_access_token, process.env.SELLER_ACCESS_TOKEN as string) as JwtPayload;
+
+    console.log(decoded);
 
     if (!decoded) {
         return next(new ErrorHandler("Access token is not valid", 400));
@@ -55,16 +59,18 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
     next();
 });
 
+console.log("Seller checked");
 
-export const authorizeRole = (...roles: string[]) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-        if (!roles.includes(req.user?.role || '')) {
-            return next(new ErrorHandler(`Role : ${req.user?.role} is not allowed to access this resource`, 400));
-        }
 
-        next();
-    }
-}
+// export const authorizeRole = (...roles: string[]) => {
+//     return (req: Request, res: Response, next: NextFunction) => {
+//         if (!roles.includes(req.user?.role || '')) {
+//             return next(new ErrorHandler(`Role : ${req.user?.role} is not allowed to access this resource`, 400));
+//         }
+
+//         next();
+//     }
+// }
 
 export const isAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     if (!(req.user?.role === "ADMIN")) {

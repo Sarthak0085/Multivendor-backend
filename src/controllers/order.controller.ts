@@ -20,11 +20,12 @@ export const createOrder = catchAsyncError(async (req: Request, res: Response, n
         // group cart items by shopId
         const shopItemsMap = new Map();
 
-        for (const item of cart) {
+        for (const item of cart.products) {
             const shopId = item.shopId;
             if (!shopItemsMap.has(shopId)) {
                 shopItemsMap.set(shopId, []);
             }
+
             shopItemsMap.get(shopId).push(item);
         }
 
@@ -76,7 +77,7 @@ export const getAllOrdersByShopId = catchAsyncError(async (req: Request, res: Re
         const shopId = req.params.shopId as string;
         const orders = await Order.find({})
             .sort({
-                createdAt: -1,
+                createdAt: 1, updatedAt: 1,
             });
         console.log(shopId);
         const ordersForShop = orders.filter(order => {
@@ -85,20 +86,18 @@ export const getAllOrdersByShopId = catchAsyncError(async (req: Request, res: Re
 
         const shopOrders = ordersForShop.map(order => ({
             cart: order.cart.filter((item: any) => item[0].product.shopId === shopId),
+            _id: order._id,
             shippingAddress: order.shippingAddress,
             user: order.user,
             userId: order.userId,
+            status: order.status,
             totalPrice: order.totalPrice,
-            paymentInfo: order.paymentInfo
+            paymentInfo: order.paymentInfo,
+            paidAt: order.paidAt,
+            createdAt: order.createdAt,
         }));
 
-        // const orders = await Order.find({ "cart.product.shopId": shopId })
-        //     .sort({
-        //         createdAt: -1,
-        //     });
         console.log(orders);
-
-
 
         res.status(200).json({
             success: true,
@@ -110,66 +109,73 @@ export const getAllOrdersByShopId = catchAsyncError(async (req: Request, res: Re
 });
 
 // update order status for seller
-// export const updateOrderStatus = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//         const orderId = req.params.orderId;
-//         const order = await Order.findById(orderId);
+export const updateOrderStatus = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const orderId = req.params.orderId;
+        const order = await Order.findById(orderId);
 
-//         if (!order) {
-//             return next(new ErrorHandler("Order not found", 404));
-//         }
-//         if (req.body.status === "Transferred to delivery partner") {
-//             order.cart.forEach(async (o) => {
-//                 await updateOrder(o._id, o.qty);
-//             });
-//         }
+        if (!order) {
+            return next(new ErrorHandler("Order not found", 404));
+        }
+        if (req.body.status === "Transferred to delivery partner") {
+            order.cart.forEach(async (o: { _id: string; qty: number }) => {
+                await updateOrder(o?._id, o?.qty);
+            });
+        }
 
-//         order.status = req.body.status;
+        order.status = req.body.status;
 
-//         if (req.body.status === "Delivered") {
-//             order.deliveredAt = Date.now();
-//             order.paymentInfo.status = "Succeeded";
-//             const serviceCharge = order.totalPrice * .10;
-//             await updateSellerInfo(order.totalPrice - serviceCharge);
-//         }
+        if (req.body.status === "Delivered") {
+            order.deliveredAt = new Date(Date.now());
+            order.paymentInfo.status = "Succeeded";
+            const serviceCharge = order.totalPrice * .10;
+            await updateSellerInfo(order.totalPrice - serviceCharge);
+        }
 
-//         await order.save({ validateBeforeSave: false });
+        await order.save({ validateBeforeSave: false });
 
-//         res.status(200).json({
-//             success: true,
-//             order,
-//         });
+        res.status(200).json({
+            success: true,
+            order,
+        });
 
-//         async function updateOrder(id, qty) {
-//             const product = await Product.findById(id);
+        async function updateOrder(id: string, qty: number) {
+            const product = await Product.findById(id);
 
-//             product.stock -= qty;
-//             product.sold_out += qty;
+            if (!product) {
+                return next(new ErrorHandler("Product not found", 404));
+            }
 
-//             await product.save({ validateBeforeSave: false });
-//         }
+            product.stock -= qty;
+            product.sold_out += qty;
 
-//         async function updateSellerInfo(amount) {
-//             const seller = await Shop.findById(req.seller.id);
+            await product.save({ validateBeforeSave: false });
+        }
 
-//             seller.availableBalance = amount;
+        async function updateSellerInfo(amount: number) {
+            const seller = await Shop.findById(req.seller._id);
+            if (!seller) {
+                return next(new ErrorHandler("Seller/Shop not found", 404));
+            }
 
-//             await seller.save();
-//         }
-//     } catch (error: any) {
-//         return next(new ErrorHandler(error.message, 500));
-//     }
-// });
+            seller.availableBalance = amount;
 
-interface IOrderRefundRequest {
-    status: "Processing" | "Delivered" | "Shipping";
-}
+            await seller.save();
+        }
+    } catch (error: any) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+});
+
+// interface IOrderRefundRequest {
+//     status: "Processing" | "Delivered" | "Shipping";
+// }
 
 // give a refund ----- user
 export const orderRefundRequest = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const orderId = req.params.orderId as string;
-        const { status } = req.body as IOrderRefundRequest;
+        const { status } = req.body;
         const order = await Order.findById(orderId);
 
         if (!order) {
@@ -190,14 +196,14 @@ export const orderRefundRequest = catchAsyncError(async (req: Request, res: Resp
     }
 });
 
-interface IOrderRefundSuccess {
-    status: "Processing" | "Delivered" | "Shipping";
-}
+// interface IOrderRefundSuccess {
+//     status: "Processing" | "Delivered" | "Shipping";
+// }
 
 // accept the refund ---- seller
 export const orderRefundSuccess = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { status } = req.body as IOrderRefundSuccess;
+        const { status } = req.body;
         const orderId = req.params.orderId as string;
         const order = await Order.findById(orderId);
 
@@ -242,8 +248,7 @@ export const orderRefundSuccess = catchAsyncError(async (req: Request, res: Resp
 export const getAllOrdersByAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const orders = await Order.find().sort({
-            deliveredAt: -1,
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1,
         });
         res.status(201).json({
             success: true,

@@ -10,8 +10,8 @@ interface ITokenOptions {
     secure?: boolean
 }
 
-const accessTokenExpires = parseInt(process.env.ACCESS_SHOP_TOKEN_EXPIRES || '1200', 10);
-const resfreshTokenExpires = parseInt(process.env.REFRESH_SHOP_TOKEN_EXPIRES || '3600', 10);
+const accessTokenExpires = parseInt(process.env.ACCESS_SHOP_TOKEN_EXPIRES || '120', 10);
+const refreshTokenExpires = parseInt(process.env.REFRESH_SHOP_TOKEN_EXPIRES || '360', 10);
 
 
 // options for cookies
@@ -22,12 +22,17 @@ export const accessTokenOptions: ITokenOptions = {
     sameSite: 'lax'
 }
 
+console.log("access: ", accessTokenOptions);
+
+
 export const refreshTokenOptions: ITokenOptions = {
-    expires: new Date(Date.now() + resfreshTokenExpires * 24 * 60 * 60 * 1000),
-    maxAge: resfreshTokenExpires * 24 * 60 * 60 * 1000,
+    expires: new Date(Date.now() + refreshTokenExpires * 24 * 60 * 60 * 1000),
+    maxAge: refreshTokenExpires * 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: 'lax'
 }
+
+console.log("access: ", refreshTokenOptions);
 
 export const sendShopToken = (seller: IShop, statusCode: number, res: Response) => {
     const accessToken = seller.SignAccessToken();

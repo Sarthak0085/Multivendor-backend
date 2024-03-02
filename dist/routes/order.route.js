@@ -18,7 +18,11 @@ orderRouter.get("/get-all/:userId", user_controller_1.updateAccessToken, auth_1.
 orderRouter.get("/get-all-shop/:shopId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, order_controller_1.getAllOrdersByShopId);
 // REFUND SUCCESS BY SELLER
 orderRouter.put("/refund-success/:orderId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, order_controller_1.orderRefundSuccess);
+// UPDATE ORDER STATUS BY SELLER
+orderRouter.put("/update-status/:orderId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, order_controller_1.updateOrderStatus);
 /******************* ADMIN ROUTES *********/
 // GET ALL ORDERS BY ADMIN
 orderRouter.get("/admin-get-all", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, order_controller_1.getAllOrdersByAdmin);
+// UPDATE ORDER STATUS BY ADMIN
+orderRouter.put("/admin-update-status/:orderId", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, order_controller_1.updateOrderStatus);
 exports.default = orderRouter;

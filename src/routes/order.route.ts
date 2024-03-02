@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { updateAccessToken } from "../controllers/user.controller";
 import { isAdmin, isAuthenticated, isSeller } from "../middleware/auth";
-import { createOrder, getAllOrderByUserId, getAllOrdersByAdmin, getAllOrdersByShopId, orderRefundRequest, orderRefundSuccess } from "../controllers/order.controller";
+import { createOrder, getAllOrderByUserId, getAllOrdersByAdmin, getAllOrdersByShopId, orderRefundRequest, orderRefundSuccess, updateOrderStatus } from "../controllers/order.controller";
 import { updateSellerAccessToken } from "../controllers/shop.controller";
 
 const orderRouter = Router();
@@ -25,9 +25,15 @@ orderRouter.get("/get-all-shop/:shopId", updateSellerAccessToken, isSeller, getA
 // REFUND SUCCESS BY SELLER
 orderRouter.put("/refund-success/:orderId", updateSellerAccessToken, isSeller, orderRefundSuccess);
 
+// UPDATE ORDER STATUS BY SELLER
+orderRouter.put("/update-status/:orderId", updateSellerAccessToken, isSeller, updateOrderStatus);
+
 /******************* ADMIN ROUTES *********/
 
 // GET ALL ORDERS BY ADMIN
 orderRouter.get("/admin-get-all", updateAccessToken, isAuthenticated, isAdmin, getAllOrdersByAdmin);
+
+// UPDATE ORDER STATUS BY ADMIN
+orderRouter.put("/admin-update-status/:orderId", updateAccessToken, isAuthenticated, isAdmin, updateOrderStatus);
 
 export default orderRouter;

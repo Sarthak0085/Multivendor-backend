@@ -29,7 +29,7 @@ const orderSchema = new mongoose_1.default.Schema({
     },
     status: {
         type: String,
-        enum: ["Processing", "Delivered", "Shipping"],
+        enum: ["Processing", "Refund Success", "Transferred to delivery partner", "Received", "Delivered", "On the way", "Shipping", "Processing Refund"],
         default: "Processing",
     },
     paymentInfo: {

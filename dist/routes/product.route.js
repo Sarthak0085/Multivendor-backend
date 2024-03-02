@@ -17,10 +17,15 @@ productRouter.put("/create-new-review", user_controller_1.updateAccessToken, aut
 /****************** PRIVATE SELLER ROUTES ***********/
 // CREATE NEW PRODUCT BY SELLER
 productRouter.post("/create", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, product_controller_1.createProduct);
-productRouter.put("/update/:productId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, product_controller_1.updateProduct);
+// GET PRODUCT BY PRODUCT ID BY SELLER
+productRouter.get("/get-product/:productId", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, product_controller_1.getProductById);
+// UPDATE PRODUCT BY PRODUCT ID BY SELLER
+productRouter.put("/update", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, product_controller_1.updateProduct);
 // DELETE SHOP PRODUCT BY PRODUCT ID
 productRouter.delete("/delete-shop-product/:id", shop_controller_1.updateSellerAccessToken, auth_1.isSeller, product_controller_1.deleteShopProduct);
 /*************** ADMIN ROUTES **************/
 // ADMIN GET ALL PRODUCTS
 productRouter.get("/admin-get-all", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, product_controller_1.getAllProducts);
+// ADMIN DELETE PRODUCT BY PRODUCT ID
+productRouter.delete("/admin-delete/:productId", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, product_controller_1.adminDeleteProductById);
 exports.default = productRouter;

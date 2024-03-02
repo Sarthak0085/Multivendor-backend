@@ -44,6 +44,8 @@ shopRouter.delete("/delete-withdraw-method", shopController.updateSellerAccessTo
 /******************* ADMIN ROUTES ***************/
 // GET ALL SHOPS BY ADMIN
 shopRouter.get("/admin-all-sellers", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, shopController.getAllShopsByAdmin);
+// Block/ UNBlock SHOP BY ADMIN
+shopRouter.put("/admin-update/:shopId", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, shopController.updateShopByAdmin);
 // DELETE SHOP BY ADMIN
 shopRouter.delete("/admin-delete-shop/:id", user_controller_1.updateAccessToken, auth_1.isAuthenticated, auth_1.isAdmin, shopController.deleteShopByAdmin);
 exports.default = shopRouter;

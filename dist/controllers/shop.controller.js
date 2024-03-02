@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserById = exports.getAllUsers = exports.getUserInfoById = exports.updatePassword = exports.deleteUserAddress = exports.updateUserAddress = exports.updateUserAvatar = exports.updateUserInfo = exports.deleteShopWithdrawMethods = exports.updateShopPayentmethods = exports.deleteShopByAdmin = exports.getAllShopsByAdmin = exports.updateShopInfo = exports.updateShopAvatar = exports.getShopInfoById = exports.getShop = exports.updateSellerAccessToken = exports.logoutShop = exports.loginShop = exports.activateShop = exports.createActivationToken = exports.shopRegister = void 0;
+exports.deleteUserById = exports.getAllUsers = exports.getUserInfoById = exports.updatePassword = exports.deleteUserAddress = exports.updateUserAddress = exports.updateUserAvatar = exports.updateUserInfo = exports.deleteShopWithdrawMethods = exports.updateShopPayentmethods = exports.deleteShopByAdmin = exports.updateShopByAdmin = exports.getAllShopsByAdmin = exports.updateShopInfo = exports.updateShopAvatar = exports.resetShopPassword = exports.createResetToken = exports.forgotShopPassword = exports.getShopInfoById = exports.getShop = exports.updateSellerAccessToken = exports.logoutShop = exports.loginShop = exports.activateShop = exports.createActivationToken = exports.shopRegister = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const user_model_1 = __importDefault(require("../models/user.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
@@ -19,16 +19,20 @@ const shopToken_1 = require("../utils/shopToken");
 // register shop
 exports.shopRegister = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const { name, email, address, phoneNumber, pinCode, password } = req.body;
+        const { name, email, address, phoneNumber, pinCode, password, avatar } = req.body;
         if (!name || name.trim() === "" || !email || email.trim() === "" ||
             !password || password.trim() === "" || !address || address.trim() === ""
-            || !phoneNumber || phoneNumber.trim() === "" || !pinCode) {
+            || !phoneNumber || phoneNumber.trim() === "" || !pinCode || !avatar || avatar === "") {
             return next(new ErrorHandler_1.default("Please fill all the details", 401));
         }
         const sellerEmail = await user_model_1.default.findOne({ email });
         if (sellerEmail) {
             return next(new ErrorHandler_1.default("Seller already exists", 400));
         }
+        const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
+            folder: "shop_avatars",
+            width: 150
+        });
         // const myCloud = await cloudinary.v2.uploader.upload(avatar, {
         //     folder: "avatars",
         // });
@@ -39,10 +43,10 @@ exports.shopRegister = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             address: address,
             phoneNumber: phoneNumber,
             pinCode: pinCode,
-            // avatar: {
-            //     public_id: await myCloud.public_id,
-            //     url: await myCloud.secure_url,
-            // },
+            avatar: {
+                public_id: myCloud.public_id,
+                url: myCloud.secure_url,
+            },
         };
         const activationToken = (0, exports.createActivationToken)(seller);
         const activationCode = activationToken.activationCode;
@@ -92,7 +96,7 @@ exports.activateShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             return next(new ErrorHandler_1.default('Invalid Activation Code', 400));
         }
         console.log(newSeller?.seller);
-        const { name, email, password, address, phoneNumber, pinCode } = newSeller.seller;
+        const { name, email, password, address, phoneNumber, pinCode, avatar } = newSeller.seller;
         // console.log("name:", name, "->email:", email);
         const existUser = await shop_model_1.default.findOne({ email });
         if (existUser) {
@@ -104,7 +108,8 @@ exports.activateShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             password,
             address,
             phoneNumber,
-            pinCode
+            pinCode,
+            avatar
         });
         res.status(200).json({
             success: true,
@@ -125,6 +130,9 @@ exports.loginShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next
         const seller = await shop_model_1.default.findOne({ email }).select("+password");
         if (!seller) {
             return next(new ErrorHandler_1.default("Shop not found.Please register first.", 404));
+        }
+        if (seller.isBlock) {
+            return next(new ErrorHandler_1.default("This account has been blocked by admin.", 404));
         }
         const isPasswordMatched = await seller.comparePassword(password);
         if (!isPasswordMatched) {
@@ -153,91 +161,41 @@ exports.logoutShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
 });
 // update access token
 exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    console.log("decoded: ");
     try {
         const seller_refresh_token = req.cookies.seller_refresh_token;
         const decoded = jsonwebtoken_1.default.verify(seller_refresh_token, process.env.SELLER_REFRESH_TOKEN);
+        console.log("decoded: ", decoded);
         if (!decoded) {
             return next(new ErrorHandler_1.default("Could not refresh token", 400));
         }
         const session = await redis_1.redis.get(decoded.id);
+        // console.log("see");
         if (!session) {
             return next(new ErrorHandler_1.default("Please login to access this resource!", 400));
         }
         const seller = JSON.parse(session);
         req.seller = seller;
+        console.log(req.seller);
         const accessToken = jsonwebtoken_1.default.sign({ id: seller._id }, process.env.SELLER_ACCESS_TOKEN, { expiresIn: "5m" });
         const refreshToken = jsonwebtoken_1.default.sign({ id: seller._id }, process.env.SELLER_REFRESH_TOKEN, { expiresIn: "3d" });
-        res.cookie("access_token", accessToken, jwt_1.accessTokenOptions);
-        res.cookie("refresh_token", refreshToken, jwt_1.refreshTokenOptions);
+        res.cookie("seller_access_token", accessToken, jwt_1.accessTokenOptions);
+        res.cookie("refresh_access_token", refreshToken, jwt_1.refreshTokenOptions);
         await redis_1.redis.set(seller._id, JSON.stringify(seller), "EX", 604800); //expire after 7 days
         // res.status(200).json({
         //     message: "Successfully"
         // })
+        console.log("seller");
         next();
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// // activate user
-// router.post(
-//     "/activation",
-//     catchAsyncErrors(async (req, res, next) => {
-//         try {
-//             const { activation_token } = req.body;
-//             const newUser = jwt.verify(
-//                 activation_token,
-//                 process.env.ACTIVATION_SECRET
-//             );
-//             if (!newUser) {
-//                 return next(new ErrorHandler("Invalid token", 400));
-//             }
-//             const { name, email, password, avatar } = newUser;
-//             let user = await User.findOne({ email });
-//             if (user) {
-//                 return next(new ErrorHandler("User already exists", 400));
-//             }
-//             user = await User.create({
-//                 name,
-//                 email,
-//                 avatar,
-//                 password,
-//             });
-//             sendToken(user, 201, res);
-//         } catch (error) {
-//             return next(new ErrorHandler(error.message, 500));
-//         }
-//     })
-// );
-// // login user
-// router.post(
-//     "/login-user",
-//     catchAsyncErrors(async (req, res, next) => {
-//         try {
-//             const { email, password } = req.body;
-//             if (!email || !password) {
-//                 return next(new ErrorHandler("Please provide the all fields!", 400));
-//             }
-//             const user = await User.findOne({ email }).select("+password");
-//             if (!user) {
-//                 return next(new ErrorHandler("User doesn't exists!", 400));
-//             }
-//             const isPasswordValid = await user.comparePassword(password);
-//             if (!isPasswordValid) {
-//                 return next(
-//                     new ErrorHandler("Please provide the correct information", 400)
-//                 );
-//             }
-//             sendToken(user, 201, res);
-//         } catch (error) {
-//             return next(new ErrorHandler(error.message, 500));
-//         }
-//     })
-// );
 // load shop
 exports.getShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const seller = await shop_model_1.default.findById(req.seller._id);
+        const seller = await shop_model_1.default.findById(req?.seller._id);
         if (!seller) {
             return next(new ErrorHandler_1.default("Shop doesn't exists", 400));
         }
@@ -250,9 +208,6 @@ exports.getShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) 
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// get shop info
-// router.get(
-//     "/get-shop-info/:id",
 exports.getShopInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const shop = await shop_model_1.default.findById(req.params.id);
@@ -265,10 +220,92 @@ exports.getShopInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// update shop profile picture
-// router.put(
-//     "/update-shop-avatar",
-//     isSeller,
+// // forgot password
+exports.forgotShopPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    const { email } = req.body;
+    const seller = await shop_model_1.default.findOne({ email });
+    if (!seller) {
+        return next(new ErrorHandler_1.default("Seller Not found with this Email. Please Register first", 401));
+    }
+    const resetToken = (0, exports.createResetToken)(seller);
+    seller.save();
+    const activationCode = resetToken.resetOtp;
+    console.log("Reset: ", resetToken);
+    const data = { user: { name: seller.name }, activationCode };
+    const html = await ejs_1.default.renderFile(path_1.default.join(__dirname, "../mails/activationMail.ejs"), data);
+    try {
+        await (0, sendMail_1.default)({
+            email: seller.email,
+            subject: "Reset Password",
+            template: "activationMail.ejs",
+            data
+        });
+        res.status(201).json({
+            success: true,
+            message: `Please check your email: ${seller.email} to reset your password.`,
+            resetToken: resetToken.resetToken,
+        });
+    }
+    catch (error) {
+        seller.passwordResetToken = undefined;
+        seller.resetOtp = undefined;
+        seller.save();
+        console.log(error);
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
+const createResetToken = (seller) => {
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetToken = jsonwebtoken_1.default.sign({
+        seller, resetOtp
+    }, process.env.SHOP_RESET_SECRET, {
+        expiresIn: "10m"
+    });
+    seller.passwordResetToken = resetToken;
+    seller.resetOtp = resetOtp;
+    seller.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+    return { resetOtp, resetToken, seller };
+};
+exports.createResetToken = createResetToken;
+exports.resetShopPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    const { reset_token, newPassword, reset_otp } = req.body;
+    if (!reset_token || reset_token === "") {
+        return next(new ErrorHandler_1.default("Reset Token Expires", 404));
+    }
+    if (!reset_otp || reset_otp === "" || !newPassword || newPassword === "" || !reset_token || reset_token === "") {
+        return next(new ErrorHandler_1.default("Please fill all the details", 401));
+    }
+    const payload = jsonwebtoken_1.default.verify(reset_token, process.env.SHOP_RESET_SECRET);
+    if (payload.resetOtp !== reset_otp) {
+        return next(new ErrorHandler_1.default('Invalid OTP', 400));
+    }
+    const seller = await shop_model_1.default.findById(payload.seller._id);
+    if (!seller) {
+        return next(new ErrorHandler_1.default('Seller not found', 404));
+    }
+    if (seller.passwordResetExpires === undefined) {
+        return next(new ErrorHandler_1.default('Reset token has expired', 400));
+    }
+    try {
+        seller.password = newPassword;
+        seller.passwordResetToken = undefined;
+        seller.passwordResetExpires = undefined;
+        seller.resetOtp = undefined;
+        await seller.save();
+        await redis_1.redis.set(`Shop-${seller?._id}:-`, JSON.stringify(seller));
+        res.status(200).json({
+            success: true,
+            message: 'Password Reset successful',
+        });
+    }
+    catch (error) {
+        seller.passwordResetToken = undefined;
+        seller.passwordResetExpires = undefined;
+        seller.resetOtp = undefined;
+        seller.save();
+        return next(new ErrorHandler_1.default(error.message, 400));
+    }
+});
 exports.updateShopAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { avatar } = req.body;
@@ -277,34 +314,37 @@ exports.updateShopAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, re
         if (avatar === null) {
             return next(new ErrorHandler_1.default("Avatar not found", 400));
         }
+        console.log(seller?.avatar.public_id);
         if (avatar && seller) {
             // if user already have avatar
-            if (seller.avatar?.public_id) {
-                // first delete the old image
-                cloudinary_1.default.v2.uploader.destroy(seller?.avatar?.public_id);
-                // then add other avatar
-                const myCloud = cloudinary_1.default.v2.uploader.upload(avatar, {
+            if (seller?.avatar.public_id) {
+                cloudinary_1.default.v2.uploader.destroy(seller?.avatar.public_id);
+                const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
                     folder: "shop_avatars",
                     width: 150
                 });
                 seller.avatar = {
-                    public_id: (await myCloud).public_id,
-                    url: (await myCloud).secure_url
+                    public_id: myCloud.public_id,
+                    url: myCloud.secure_url
                 };
             }
             else {
-                const myCloud = cloudinary_1.default.v2.uploader.upload(avatar, {
+                const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
                     folder: "shop_avatars",
                     width: 150
                 });
                 seller.avatar = {
-                    public_id: (await myCloud).public_id,
-                    url: (await myCloud).secure_url
+                    public_id: myCloud.public_id,
+                    url: myCloud.secure_url
                 };
             }
         }
-        await seller?.save();
-        await redis_1.redis.set(shopId, JSON.stringify(seller));
+        console.log(seller?.avatar.public_id);
+        if (!seller) {
+            return next(new ErrorHandler_1.default("Shop not found", 404));
+        }
+        await seller.save();
+        await redis_1.redis.set(`Shop-${shopId}:-`, JSON.stringify(seller));
         res.status(201).json({
             success: true,
             seller
@@ -314,15 +354,11 @@ exports.updateShopAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, re
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// update shop info
-// router.put(
-//     "/update-seller-info",
-//     isSeller,
 exports.updateShopInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { name, email, description, address, phoneNumber, pinCode } = req.body;
         const shopId = req.seller?._id;
-        const shop = await shop_model_1.default.findOne(shopId);
+        const shop = await shop_model_1.default.findById(shopId);
         if (!shop) {
             return next(new ErrorHandler_1.default("Shop not found", 400));
         }
@@ -345,6 +381,7 @@ exports.updateShopInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
             shop.pinCode = pinCode;
         }
         const updatedShop = await shop_model_1.default.findByIdAndUpdate(shopId, shop, { new: true });
+        await redis_1.redis.set(`Shop-${shopId}:-`, JSON.stringify(updatedShop));
         res.status(201).json({
             success: true,
             shop: updatedShop,
@@ -354,15 +391,10 @@ exports.updateShopInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// all sellers --- for admin
-// router.get(
-//     "/admin-all-sellers",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 exports.getAllShopsByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const sellers = await shop_model_1.default.find().sort({
-            createdAt: -1,
+            createdAt: 1, updatedAt: 1,
         });
         res.status(201).json({
             success: true,
@@ -373,11 +405,21 @@ exports.getAllShopsByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, 
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// delete seller ---admin
-// router.delete(
-//     "/delete-seller/:id",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+exports.updateShopByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
+    try {
+        const seller = await shop_model_1.default.findByIdAndUpdate(req.params.shopId, req.body, { new: true });
+        if (!seller) {
+            return next(new ErrorHandler_1.default("Shop not found", 404));
+        }
+        res.status(201).json({
+            success: true,
+            seller,
+        });
+    }
+    catch (error) {
+        return next(new ErrorHandler_1.default(error.message, 500));
+    }
+});
 exports.deleteShopByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const shop = await shop_model_1.default.findById(req.params.id);
@@ -394,16 +436,15 @@ exports.deleteShopByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// update seller withdraw methods --- sellers
-// router.put(
-//     "/update-payment-methods",
-//     isSeller,
 exports.updateShopPayentmethods = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const { withdrawMethod } = req.body;
+        const { bankName, bankCountry, bankSwiftCode, bankHolderName, bankAccountNumber, bankAddress } = req.body;
+        console.log("withdrawMethod :", bankName, bankCountry, bankSwiftCode, bankHolderName, bankAccountNumber, bankAddress);
+        const withdrawMethod = { bankName, bankCountry, bankSwiftCode, bankHolderName, bankAccountNumber, bankAddress };
         const seller = await shop_model_1.default.findByIdAndUpdate(req.seller._id, {
             withdrawMethod,
-        });
+        }, { new: true });
+        console.log("shop: ", seller);
         res.status(201).json({
             success: true,
             seller,
@@ -413,10 +454,6 @@ exports.updateShopPayentmethods = (0, catchAsyncError_1.catchAsyncError)(async (
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// delete seller withdraw merthods --- only seller
-// router.delete(
-//     "/delete-withdraw-method/",
-//     isSeller,
 exports.deleteShopWithdrawMethods = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const shop = await shop_model_1.default.findById(req.seller._id);
@@ -424,7 +461,7 @@ exports.deleteShopWithdrawMethods = (0, catchAsyncError_1.catchAsyncError)(async
             return next(new ErrorHandler_1.default("Shop not found", 400));
         }
         else {
-            shop.withdrawMethod = undefined;
+            shop.withdrawMethod = {};
             await shop.save();
             res.status(201).json({
                 success: true,
