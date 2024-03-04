@@ -19,7 +19,7 @@ export const isAuthenticated = catchAsyncError(async (req: Request, res: Respons
         return next(new ErrorHandler("Access token is not valid", 400));
     }
 
-    const user = await redis.get(decoded.id);
+    const user = await redis.get(`user-${decoded.id}:-`);
 
     if (!user) {
         return next(new ErrorHandler("Please login to access this resource", 400));
@@ -48,7 +48,7 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
         return next(new ErrorHandler("Access token is not valid", 400));
     }
 
-    const shop = await redis.get(decoded.id);
+    const shop = await redis.get(`shop-${decoded.id}:-`);
     // const shop = await Shop.findById(decoded.id)
 
     if (!shop) {
