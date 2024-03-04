@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 import ErrorHandler from "../utils/ErrorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { redis } from "../utils/redis";
-import User from "../models/user.model";
-import Shop from "../models/shop.model";
 
 
 export const isAuthenticated = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -21,14 +19,13 @@ export const isAuthenticated = catchAsyncError(async (req: Request, res: Respons
         return next(new ErrorHandler("Access token is not valid", 400));
     }
 
-    // const user = await redis.get(decoded.id);
-    const user = await User.findById(decoded.id);
+    const user = await redis.get(decoded.id);
 
     if (!user) {
         return next(new ErrorHandler("Please login to access this resource", 400));
     }
 
-    req.user = user;
+    req.user = JSON.parse(user);
 
     next();
 })
@@ -51,14 +48,14 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
         return next(new ErrorHandler("Access token is not valid", 400));
     }
 
-    // const shop = await redis.get(decoded.id);
-    const shop = await Shop.findById(decoded.id)
+    const shop = await redis.get(decoded.id);
+    // const shop = await Shop.findById(decoded.id)
 
     if (!shop) {
         return next(new ErrorHandler("Please login to access this resource", 400));
     }
 
-    req.seller = shop;
+    req.seller = JSON.parse(shop);
 
     next();
 });

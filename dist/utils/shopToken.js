@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendShopToken = exports.refreshTokenOptions = exports.accessTokenOptions = void 0;
 const redis_1 = require("./redis");
 const accessTokenExpires = parseInt(process.env.ACCESS_SHOP_TOKEN_EXPIRES || '120', 10);
-const refreshTokenExpires = parseInt(process.env.REFRESH_SHOP_TOKEN_EXPIRES || '360', 10);
+const refreshTokenExpires = parseInt(process.env.REFRESH_SHOP_TOKEN_EXPIRES || '30', 10);
 // options for cookies
 exports.accessTokenOptions = {
     expires: new Date(Date.now() + accessTokenExpires * 60 * 1000),

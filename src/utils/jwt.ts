@@ -10,9 +10,8 @@ interface ITokenOptions {
     secure?: boolean
 }
 
-const accessTokenExpires = parseInt(process.env.ACCESS_TOKEN_EXPIRES || '1200', 10);
-const refreshTokenExpires = parseInt(process.env.REFRESH_TOKEN_EXPIRES || '3600', 10);
-
+const accessTokenExpires = parseInt(process.env.ACCESS_TOKEN_EXPIRES || '120', 10);
+const refreshTokenExpires = parseInt(process.env.REFRESH_TOKEN_EXPIRES || '30', 10);
 
 // options for cookies
 export const accessTokenOptions: ITokenOptions = {
@@ -37,8 +36,6 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
 
     //upload session to redis 
     redis.set(`user-${user._id}:-`, JSON.stringify(user));
-    redis.set(`user:-${user.email}:-`, JSON.stringify(user));
-
 
     // only set secure to true in production
     if (process.env.NODE_ENV === 'Production') {

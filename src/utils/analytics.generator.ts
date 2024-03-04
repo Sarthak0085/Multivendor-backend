@@ -54,11 +54,11 @@ export async function generateLast30DaysData<T extends Document>(
 ): Promise<{ analyticsData: DayData[] }> {
     const analyticsData: DayData[] = [];
     const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() + 1); // Add 1 to include the current day
+    currentDate.setDate(currentDate.getDate() + 1);
 
-    for (let i = 29; i >= 0; i = i - 2) { // Loop for the last 30 days
+    for (let i = 29; i >= 0; i = i - 2) {
         const previousDate = new Date(currentDate);
-        previousDate.setDate(currentDate.getDate() - i); // Subtract i to get previous dates
+        previousDate.setDate(currentDate.getDate() - i);
 
         const dayDate = previousDate.toLocaleDateString("default", {
             month: "short",
@@ -67,8 +67,8 @@ export async function generateLast30DaysData<T extends Document>(
 
         const count = await model.countDocuments({
             createdAt: {
-                $gte: new Date(previousDate.setHours(0, 0, 0, 0)), // Start of the day
-                $lte: new Date(previousDate.setHours(23, 59, 59, 999)), // End of the day
+                $gte: new Date(previousDate.setHours(0, 0, 0, 0)),
+                $lte: new Date(previousDate.setHours(23, 59, 59, 999)),
             },
         });
 
@@ -88,11 +88,11 @@ export async function generateLast24HoursData<T extends Document>(
 ): Promise<{ analyticsData: HourlyData[] }> {
     const analyticsData: HourlyData[] = [];
     const currentDate = new Date();
-    currentDate.setHours(currentDate.getHours() + 1); // Add 1 to include the current hour
+    currentDate.setHours(currentDate.getHours() + 1);
 
-    for (let i = 23; i >= 0; i = i - 2) { // Loop for the last 24 hours
+    for (let i = 23; i >= 0; i = i - 2) {
         const previousHour = new Date(currentDate);
-        previousHour.setHours(currentDate.getHours() - i); // Subtract i to get previous hours
+        previousHour.setHours(currentDate.getHours() - i);
 
         const hourString = previousHour.toLocaleString("default", {
             hour: "numeric",
@@ -101,8 +101,8 @@ export async function generateLast24HoursData<T extends Document>(
 
         const count = await model.countDocuments({
             createdAt: {
-                $gte: new Date(previousHour.setMinutes(0, 0, 0)), // Start of the hour
-                $lte: new Date(previousHour.setMinutes(59, 59, 999)), // End of the hour
+                $gte: new Date(previousHour.setMinutes(0, 0, 0)),
+                $lte: new Date(previousHour.setMinutes(59, 59, 999)),
             },
         });
 
