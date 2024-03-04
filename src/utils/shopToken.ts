@@ -41,7 +41,7 @@ export const sendShopToken = (seller: IShop, statusCode: number, res: Response) 
     const refreshToken = seller.SignRefreshToken();
 
     //upload session to redis 
-    redis.set(seller._id, JSON.stringify(seller) as any);
+    // redis.set(seller._id, JSON.stringify(seller) as any);
 
 
     // only set secure to true in production

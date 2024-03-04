@@ -6,7 +6,7 @@ interface ITokenOptions {
     expires: Date,
     maxAge: number,
     httpOnly: boolean,
-    sameSite: 'lax' | 'strict' | 'none' | undefined,
+    sameSite: 'lax' | 'strict' | 'none',
     secure?: boolean
 }
 
@@ -36,7 +36,7 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
     const refreshToken = user.SignRefreshToken();
 
     //upload session to redis 
-    redis.set(user._id, JSON.stringify(user));
+    // redis.set(user._id, JSON.stringify(user));
 
 
     // only set secure to true in production
