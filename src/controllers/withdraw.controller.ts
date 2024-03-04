@@ -9,11 +9,45 @@ export const createWithdrawRequest = catchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { amount } = req.body;
-
+            console.log("amount :", req.body, amount);
             const data = {
                 seller: req.seller,
-                amount,
+                amount: amount,
             };
+
+            const withdraw = await Withdraw.create(data);
+
+            const shop = await Shop.findById(req.seller._id);
+
+            if (!shop) {
+                return next(new ErrorHandler("Shop not found", 404));
+            }
+
+            if (shop.availableBalance !== undefined) {
+                shop.availableBalance = shop.availableBalance - amount;
+                await shop.save();
+
+                const data1 = { seller: { name: shop.name }, amount };
+
+                try {
+                    await sendEmail({
+                        email: shop.email,
+                        subject: "Withdraw Request",
+                        template: "withdrawRequest.ejs",
+                        data: data1,
+                    });
+
+                    res.status(201).json({
+                        success: true,
+                        withdraw,
+                    });
+
+                } catch (error: any) {
+                    return next(new ErrorHandler(error.message, 400));
+                };
+            }
+
+
 
             // try {
             //     await sendEmail({
@@ -28,22 +62,22 @@ export const createWithdrawRequest = catchAsyncError(
             //     return next(new ErrorHandler(error.message, 500));
             // }
 
-            const withdraw = await Withdraw.create(data);
+            // const withdraw = await Withdraw.create(data);
 
-            const shop = await Shop.findById(req.seller._id);
+            // const shop = await Shop.findById(req.seller._id);
 
-            if (!shop) {
-                return next(new ErrorHandler("Shop not found", 404));
-            }
+            // if (!shop) {
+            //     return next(new ErrorHandler("Shop not found", 404));
+            // }
 
-            if (shop.availableBalance !== undefined) {
-                shop.availableBalance = shop.availableBalance - amount;
-                await shop.save();
-                res.status(201).json({
-                    success: true,
-                    withdraw,
-                });
-            }
+            // if (shop.availableBalance !== undefined) {
+            //     shop.availableBalance = shop.availableBalance - amount;
+            //     await shop.save();
+            //     res.status(201).json({
+            //         success: true,
+            //         withdraw,
+            //     });
+            // }
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 500));
         }
@@ -51,11 +85,6 @@ export const createWithdrawRequest = catchAsyncError(
 );
 
 // get all withdraws --- admnin
-
-// router.get(
-//     "/get-all-withdraw-request",
-//     isAuthenticated,
-//     isAdmin("Admin"),
 export const getAllWithdrawRequestByAdmin = catchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -71,20 +100,18 @@ export const getAllWithdrawRequestByAdmin = catchAsyncError(
     }
 );
 
-// update withdraw request ---- admin
-// router.put(
-//     "/update-withdraw-request/:id",
-//     isAuthenticated,
-//     isAdmin("Admin"),
+// update withdraw request by admin
 export const updateWithdrawRequestByAdmin = catchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { sellerId } = req.body;
+            const { shopId, withdrawStatus } = req.body;
             const withdrawId = req.params.id;
+            console.log(shopId, withdrawStatus, withdrawId);
+
             const withdraw = await Withdraw.findByIdAndUpdate(
                 withdrawId,
                 {
-                    status: "succeed",
+                    status: withdrawStatus,
                     updatedAt: Date.now(),
                 },
                 { new: true }
@@ -94,7 +121,7 @@ export const updateWithdrawRequestByAdmin = catchAsyncError(
                 return next(new ErrorHandler("Withdraw Request not found", 404));
             }
 
-            const shop = await Shop.findById(sellerId);
+            const shop = await Shop.findById(shopId);
 
             if (!shop) {
                 return next(new ErrorHandler("Shop not found", 404));
@@ -111,6 +138,25 @@ export const updateWithdrawRequestByAdmin = catchAsyncError(
 
             await shop.save();
 
+            const data = { seller: { name: shop.name }, withdraw: { amount: withdraw.amount } };
+
+            try {
+                await sendEmail({
+                    email: shop.email,
+                    subject: "Withdraw Success",
+                    template: "withdrawSuccess.ejs",
+                    data
+                });
+
+
+                res.status(201).json({
+                    success: true,
+                    withdraw,
+                });
+            } catch (error: any) {
+                return next(new ErrorHandler(error.message, 400));
+            };
+
             // try {
             //     await sendEMail({
             //         email: seller.email,
@@ -120,10 +166,6 @@ export const updateWithdrawRequestByAdmin = catchAsyncError(
             // } catch (error) {
             //     return next(new ErrorHandler(error.message, 500));
             // }
-            res.status(201).json({
-                success: true,
-                withdraw,
-            });
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 500));
         }

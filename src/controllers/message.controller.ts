@@ -9,6 +9,67 @@ import ErrorHandler from "../utils/ErrorHandler";
 //     "/create-new-message",
 export const createNewMessage = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // const messageData: any = {}; // Create an empty object to store message data
+
+        // if (req.files) {
+        //     for (const file of req.files) {
+        //         switch (file.fieldname) {
+        //             case "images":
+        //                 const imageCloud = await cloudinary.v2.uploader.upload(file.path, {
+        //                     folder: "messages",
+        //                 })
+        //                 messageData.image = {
+        //                     public_id: imageCloud.public_id,
+        //                     url: imageCloud.url,
+        //                 }
+        //             case "audio":
+        //                 const audioCloud = await cloudinary.v2.uploader.upload(file.path, {
+        //                     folder: "messages",
+        //                 });
+        //                 messageData.audio = {
+        //                     public_id: audioCloud.public_id,
+        //                     url: audioCloud.url,
+        //                 };
+        //                 break;
+        //             case "video":
+        //                 const videoCloud = await cloudinary.v2.uploader.upload(file.path, {
+        //                     folder: "messages",
+        //                 });
+        //                 messageData.video = {
+        //                     public_id: videoCloud.public_id,
+        //                     url: videoCloud.url,
+        //                 };
+        //                 break;
+        //             // Handle other file types similarly (e.g., emojis, GIFs, PDFs, etc.)
+        //             // Add more cases as needed for each file type
+        //             default:
+        //                 // Handle other file types (emojis, GIFs, PDFs, etc.)
+        //                 break;
+        //         }
+        //     }
+        // }
+
+        // // Populate other message data from the request body
+        // messageData.conversationId = req.body.conversationId;
+        // messageData.sender = req.body.sender;
+        // messageData.text = req.body.text;
+
+        // // Create a new message instance using the messageData object
+        // const message = new Messages({
+        //     conversationId: messageData.conversationId,
+        //     text: messageData.text,
+        //     sender: messageData.sender,
+        //     audio: messageData.audio ? messageData.audio : undefined,
+        //     video: messageData.video ? messageData.video : undefined,
+        // });
+
+        // await message.save();
+
+        // res.status(201).json({
+        //     success: true,
+        //     message,
+        // });
+
         const messageData = req.body;
 
         if (req.body.images) {

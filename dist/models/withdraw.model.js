@@ -16,7 +16,7 @@ const withdrawSchema = new mongoose_1.default.Schema({
     },
     status: {
         type: String,
-        default: "Processing",
+        default: "PENDING",
     },
 }, { timestamps: true });
 const Withdraw = mongoose_1.default.model("Withdraw", withdrawSchema);

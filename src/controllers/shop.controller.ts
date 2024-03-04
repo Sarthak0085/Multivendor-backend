@@ -254,7 +254,7 @@ export const updateSellerAccessToken = catchAsyncError(async (req: Request, res:
         res.cookie("seller_access_token", accessToken, accessTokenOptions);
         res.cookie("refresh_access_token", refreshToken, refreshTokenOptions);
 
-        await redis.set(seller._id, JSON.stringify(seller), "EX", 604800); //expire after 7 days
+        await redis.set(`shop-${seller._id}:-`, JSON.stringify(seller), "EX", 604800); //expire after 7 days
 
         // res.status(200).json({
         //     message: "Successfully"
@@ -329,7 +329,7 @@ export const forgotShopPassword = catchAsyncError(async (req: Request, res: Resp
         await sendEmail({
             email: seller.email,
             subject: "Reset Password",
-            template: "activationMail.ejs",
+            template: "resetMail.ejs",
             data
         });
 

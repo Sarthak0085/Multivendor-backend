@@ -3,7 +3,7 @@ import mongoose, { Document } from "mongoose";
 interface IWithdraw extends Document {
     seller: mongoose.Types.ObjectId | object;
     amount: number;
-    status: string;
+    status: "PENDING" | "SUCCEEDED";
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -21,7 +21,7 @@ const withdrawSchema = new mongoose.Schema<IWithdraw>(
         },
         status: {
             type: String,
-            default: "Processing",
+            default: "PENDING",
         },
     },
     { timestamps: true }

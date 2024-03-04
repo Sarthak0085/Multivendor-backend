@@ -42,11 +42,11 @@ authRouter.post("/reset-shop-password", resetShopPassword);
 /**************** PRIVATE USER ROUTES *************/
 
 // LOGOUT USER
-authRouter.get("/logout", isAuthenticated, updateAccessToken, logoutUser);
+authRouter.post("/logout", isAuthenticated, updateAccessToken, logoutUser);
 
 /*************** PRIVATE SHOP ROUTES ***************/
 
 // LOGOUT SHOP
-authRouter.get("/logout-shop", isSeller, updateSellerAccessToken, logoutShop);
+authRouter.post("/logout-shop", isSeller, updateSellerAccessToken, logoutShop);
 
 export default authRouter;

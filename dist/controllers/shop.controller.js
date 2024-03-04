@@ -19,7 +19,7 @@ const shopToken_1 = require("../utils/shopToken");
 // register shop
 exports.shopRegister = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const { name, email, address, phoneNumber, pinCode, password, avatar } = req.body;
+        const { name, email, address, description, phoneNumber, pinCode, password, avatar } = req.body;
         if (!name || name.trim() === "" || !email || email.trim() === "" ||
             !password || password.trim() === "" || !address || address.trim() === ""
             || !phoneNumber || phoneNumber.trim() === "" || !pinCode || !avatar || avatar === "") {
@@ -47,6 +47,7 @@ exports.shopRegister = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
                 public_id: myCloud.public_id,
                 url: myCloud.secure_url,
             },
+            description: description,
         };
         const activationToken = (0, exports.createActivationToken)(seller);
         const activationCode = activationToken.activationCode;
@@ -96,7 +97,7 @@ exports.activateShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             return next(new ErrorHandler_1.default('Invalid Activation Code', 400));
         }
         console.log(newSeller?.seller);
-        const { name, email, password, address, phoneNumber, pinCode, avatar } = newSeller.seller;
+        const { name, email, password, description, address, phoneNumber, pinCode, avatar } = newSeller.seller;
         // console.log("name:", name, "->email:", email);
         const existUser = await shop_model_1.default.findOne({ email });
         if (existUser) {
@@ -109,7 +110,8 @@ exports.activateShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             address,
             phoneNumber,
             pinCode,
-            avatar
+            avatar,
+            description,
         });
         res.status(200).json({
             success: true,
@@ -181,7 +183,7 @@ exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (
         const refreshToken = jsonwebtoken_1.default.sign({ id: seller._id }, process.env.SELLER_REFRESH_TOKEN, { expiresIn: "3d" });
         res.cookie("seller_access_token", accessToken, jwt_1.accessTokenOptions);
         res.cookie("refresh_access_token", refreshToken, jwt_1.refreshTokenOptions);
-        await redis_1.redis.set(seller._id, JSON.stringify(seller), "EX", 604800); //expire after 7 days
+        await redis_1.redis.set(`shop-${seller._id}:-`, JSON.stringify(seller), "EX", 604800); //expire after 7 days
         // res.status(200).json({
         //     message: "Successfully"
         // })
@@ -237,7 +239,7 @@ exports.forgotShopPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, 
         await (0, sendMail_1.default)({
             email: seller.email,
             subject: "Reset Password",
-            template: "activationMail.ejs",
+            template: "resetMail.ejs",
             data
         });
         res.status(201).json({

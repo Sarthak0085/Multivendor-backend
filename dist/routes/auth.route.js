@@ -29,8 +29,8 @@ authRouter.post("/forgot-shop-password", shop_controller_1.forgotShopPassword);
 authRouter.post("/reset-shop-password", shop_controller_1.resetShopPassword);
 /**************** PRIVATE USER ROUTES *************/
 // LOGOUT USER
-authRouter.get("/logout", auth_1.isAuthenticated, user_controller_1.updateAccessToken, user_controller_1.logoutUser);
+authRouter.post("/logout", auth_1.isAuthenticated, user_controller_1.updateAccessToken, user_controller_1.logoutUser);
 /*************** PRIVATE SHOP ROUTES ***************/
 // LOGOUT SHOP
-authRouter.get("/logout-shop", auth_1.isSeller, shop_controller_1.updateSellerAccessToken, shop_controller_1.logoutShop);
+authRouter.post("/logout-shop", auth_1.isSeller, shop_controller_1.updateSellerAccessToken, shop_controller_1.logoutShop);
 exports.default = authRouter;

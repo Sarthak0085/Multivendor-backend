@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrendFlex Activation email</title>
+    <title>Payment Success</title>
     <style type="text/css">
         body {
             margin: 0;
@@ -23,12 +23,11 @@
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             line-height: 1.25;
             margin-top: 0;
             margin-bottom: 15px;
-            text-align: center;
         }
 
         p {
@@ -78,16 +77,13 @@
 <body>
     <div class="email-wrapper">
         <div class="email-header">
-            <h1>Welcome to TrendFlex</h1>
+            <h1>Payment Success</h1>
         </div>
         <div class="email-body">
             <p>Hello <%=user.name%>,</p>
-            <p>Thank for registering with TrendFlex.To activate your account, please use the following code:</p>
-            <h2>
-                <%=activationCode %>
-            </h2>
-            <p>Please enter this code on activation page within the next five minutes</p>
-            <p>If you did not registering for the TrendFlex account.Please ignore this email</p>
+            <h1>Your payment request of &#8377;. <%=amount%> is successful.</h1>
+            <P>You will get your orders within 5 days to 7 days for procesing.</P>
+            <p>If you did not send any payment. Please ignore this email</p>
         </div>
         <div class="email-footer">
             <p>If you have any questions, please don't hesitate to conatct us <a

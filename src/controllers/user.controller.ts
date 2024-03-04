@@ -16,13 +16,13 @@ interface IRegistrationbody {
     fullName: string,
     email: string,
     password: string,
-    avatar?: string,
+    avatar: string,
 }
 
 // register user
 export const register = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { fullName, email, password } = req.body as IRegistrationbody;
+        const { fullName, email, password, avatar } = req.body as IRegistrationbody;
 
         if (!fullName || fullName === "" || !email || email === "" || !password || password === "") {
             return next(new ErrorHandler("Please fill all the details", 401));
@@ -34,18 +34,18 @@ export const register = catchAsyncError(async (req: Request, res: Response, next
             return next(new ErrorHandler("User already exists", 400));
         }
 
-        // const myCloud = await cloudinary.v2.uploader.upload(avatar, {
-        //     folder: "avatars",
-        // });
+        const myCloud = await cloudinary.v2.uploader.upload(avatar, {
+            folder: "avatars",
+        });
 
         const user = {
             fullName: fullName,
             email: email,
             password: password,
-            // avatar: {
-            //     public_id: await myCloud.public_id,
-            //     url: await myCloud.secure_url,
-            // },
+            avatar: {
+                public_id: myCloud.public_id,
+                url: myCloud.secure_url,
+            },
         };
 
         const activationToken = createActivationToken(user);
@@ -331,7 +331,7 @@ export const forgotPassword = catchAsyncError(async (req: Request, res: Response
         await sendEmail({
             email: user.email,
             subject: "Reset Password",
-            template: "activationMail.ejs",
+            template: "resetMail.ejs",
             data
         });
 

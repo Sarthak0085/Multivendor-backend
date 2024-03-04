@@ -18,7 +18,7 @@ const user_service_1 = require("../services/user.service");
 // register user
 exports.register = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const { fullName, email, password } = req.body;
+        const { fullName, email, password, avatar } = req.body;
         if (!fullName || fullName === "" || !email || email === "" || !password || password === "") {
             return next(new ErrorHandler_1.default("Please fill all the details", 401));
         }
@@ -26,17 +26,17 @@ exports.register = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next)
         if (userEmail) {
             return next(new ErrorHandler_1.default("User already exists", 400));
         }
-        // const myCloud = await cloudinary.v2.uploader.upload(avatar, {
-        //     folder: "avatars",
-        // });
+        const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
+            folder: "avatars",
+        });
         const user = {
             fullName: fullName,
             email: email,
             password: password,
-            // avatar: {
-            //     public_id: await myCloud.public_id,
-            //     url: await myCloud.secure_url,
-            // },
+            avatar: {
+                public_id: myCloud.public_id,
+                url: myCloud.secure_url,
+            },
         };
         const activationToken = (0, exports.createActivationToken)(user);
         const activationCode = activationToken.activationCode;
@@ -251,7 +251,7 @@ exports.forgotPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
         await (0, sendMail_1.default)({
             email: user.email,
             subject: "Reset Password",
-            template: "activationMail.ejs",
+            template: "resetMail.ejs",
             data
         });
         res.status(201).json({
