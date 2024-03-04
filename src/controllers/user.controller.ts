@@ -117,7 +117,7 @@ export const activateUser = catchAsyncError(async (req: Request, res: Response, 
         if (newUser.activationCode !== activation_code) {
             return next(new ErrorHandler('Invalid Activation Code', 400));
         }
-        const { fullName, email, password } = newUser.user;
+        const { fullName, email, password, avatar } = newUser.user;
         const existUser = await User.findOne({ email });
 
         if (existUser) {
@@ -128,6 +128,7 @@ export const activateUser = catchAsyncError(async (req: Request, res: Response, 
             fullName,
             email,
             password,
+            avatar,
         });
 
         res.status(200).json({
