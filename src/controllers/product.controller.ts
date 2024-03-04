@@ -74,7 +74,7 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
                     url: result.secure_url,
                 });
             }
-            updatedData.images = [...product.images, ...newImagesLinks]; // Combine existing and new images
+            updatedData.images = [...product.images, ...newImagesLinks];
         }
 
 
@@ -167,7 +167,7 @@ export const deleteShopProduct = catchAsyncError(async (req: Request, res: Respo
 
 export const getAllProducts = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const products = await Product.find().sort({ createdAt: 1, updatedAt: 1, });
+        const products = await Product.find().sort({ createdAt: -1, updatedAt: -1, });
 
         res.status(201).json({
             success: true,

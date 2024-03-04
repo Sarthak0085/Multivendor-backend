@@ -18,7 +18,6 @@ const shop_model_1 = __importDefault(require("../models/shop.model"));
 exports.createOrder = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { cart, shippingAddress, user, userId, totalPrice, paymentInfo } = req.body;
-        // group cart items by shopId
         const shopItemsMap = new Map();
         for (const item of cart.products) {
             const shopId = item.shopId;
@@ -27,7 +26,6 @@ exports.createOrder = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
             }
             shopItemsMap.get(shopId).push(item);
         }
-        // create an order for each shop
         const orders = [];
         for (const [shopId, items] of shopItemsMap) {
             const order = await order_model_1.default.create({
@@ -147,9 +145,6 @@ exports.updateOrderStatus = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         return next(new ErrorHandler_1.default(error.message, 500));
     }
 });
-// interface IOrderRefundRequest {
-//     status: "Processing" | "Delivered" | "Shipping";
-// }
 // give a refund ----- user
 exports.orderRefundRequest = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
@@ -171,9 +166,6 @@ exports.orderRefundRequest = (0, catchAsyncError_1.catchAsyncError)(async (req, 
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-// interface IOrderRefundSuccess {
-//     status: "Processing" | "Delivered" | "Shipping";
-// }
 // accept the refund ---- seller
 exports.orderRefundSuccess = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
@@ -214,7 +206,7 @@ exports.orderRefundSuccess = (0, catchAsyncError_1.catchAsyncError)(async (req, 
 exports.getAllOrdersByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const orders = await order_model_1.default.find().sort({
-            createdAt: 1, updatedAt: 1,
+            createdAt: -1, updatedAt: -1,
         });
         res.status(201).json({
             success: true,

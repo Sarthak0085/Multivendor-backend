@@ -46,38 +46,6 @@ export const createWithdrawRequest = catchAsyncError(
                     return next(new ErrorHandler(error.message, 400));
                 };
             }
-
-
-
-            // try {
-            //     await sendEmail({
-            //         email: req.seller.email,
-            //         subject: "Withdraw Request",
-            //         message: `Hello ${req.seller.name}, Your withdraw request of ${amount}$ is processing. It will take 3days to 7days to processing! `,
-            //     });
-            //     res.status(201).json({
-            //         success: true,
-            //     });
-            // } catch (error:any) {
-            //     return next(new ErrorHandler(error.message, 500));
-            // }
-
-            // const withdraw = await Withdraw.create(data);
-
-            // const shop = await Shop.findById(req.seller._id);
-
-            // if (!shop) {
-            //     return next(new ErrorHandler("Shop not found", 404));
-            // }
-
-            // if (shop.availableBalance !== undefined) {
-            //     shop.availableBalance = shop.availableBalance - amount;
-            //     await shop.save();
-            //     res.status(201).json({
-            //         success: true,
-            //         withdraw,
-            //     });
-            // }
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 500));
         }
@@ -157,15 +125,6 @@ export const updateWithdrawRequestByAdmin = catchAsyncError(
                 return next(new ErrorHandler(error.message, 400));
             };
 
-            // try {
-            //     await sendEMail({
-            //         email: seller.email,
-            //         subject: "Payment confirmation",
-            //         message: `Hello ${seller.name}, Your withdraw request of ${withdraw.amount}$ is on the way. Delivery time depends on your bank's rules it usually takes 3 days to 7 days.`,
-            //     });
-            // } catch (error) {
-            //     return next(new ErrorHandler(error.message, 500));
-            // }
         } catch (error: any) {
             return next(new ErrorHandler(error.message, 500));
         }

@@ -3,6 +3,7 @@ import { catchAsyncError } from "../middleware/catchAsyncError";
 import ErrorHandler from "../utils/ErrorHandler";
 import cloudinary from "cloudinary";
 import LayoutModel from "../models/layout.model";
+import { redis } from "../utils/redis";
 
 // create layout
 export const createLayout = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -32,6 +33,7 @@ export const createLayout = catchAsyncError(async (req: Request, res: Response, 
             }
 
             await LayoutModel.create(banner);
+            await redis.set(`Layout-${type}:-`, JSON.stringify(banner))
         }
 
         if (type === "FAQ") {
@@ -47,6 +49,7 @@ export const createLayout = catchAsyncError(async (req: Request, res: Response, 
             )
 
             await LayoutModel.create({ type: "FAQ", faq: faqItems });
+            await redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }))
         }
 
         res.status(200).json({
@@ -83,6 +86,7 @@ export const editLayout = catchAsyncError(async (req: Request, res: Response, ne
             }
 
             await LayoutModel.findByIdAndUpdate(bannerData._id, { banner });
+            await redis.set(`Layout-${type}:-`, JSON.stringify(banner))
         }
 
         if (type === "FAQ") {
@@ -98,6 +102,7 @@ export const editLayout = catchAsyncError(async (req: Request, res: Response, ne
             )
 
             await LayoutModel.findByIdAndUpdate(faqData?._id, { type: "FAQ", faq: faqItems });
+            await redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }))
         }
 
         res.status(200).json({
@@ -113,12 +118,23 @@ export const editLayout = catchAsyncError(async (req: Request, res: Response, ne
 export const getLayout = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { type } = req.params;
-        const layout = await LayoutModel.findOne({ type });
 
-        res.status(201).json({
-            success: true,
-            layout
-        })
+        const layoutData = await redis.get(`Layout-${type}:-`);
+
+        if (layoutData) {
+            const layout = JSON.parse(layoutData);
+            res.status(201).json({
+                success: true,
+                layout
+            })
+        } else {
+            const layout = await LayoutModel.findOne({ type });
+
+            res.status(201).json({
+                success: true,
+                layout
+            })
+        }
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 500));
     }

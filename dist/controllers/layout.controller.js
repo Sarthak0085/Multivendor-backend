@@ -8,6 +8,7 @@ const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const cloudinary_1 = __importDefault(require("cloudinary"));
 const layout_model_1 = __importDefault(require("../models/layout.model"));
+const redis_1 = require("../utils/redis");
 // create layout
 exports.createLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
@@ -33,6 +34,7 @@ exports.createLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
                 }
             };
             await layout_model_1.default.create(banner);
+            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify(banner));
         }
         if (type === "FAQ") {
             const { faq } = req.body;
@@ -43,6 +45,7 @@ exports.createLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
                 };
             }));
             await layout_model_1.default.create({ type: "FAQ", faq: faqItems });
+            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }));
         }
         res.status(200).json({
             success: true,
@@ -72,6 +75,7 @@ exports.editLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
                 subTitle,
             };
             await layout_model_1.default.findByIdAndUpdate(bannerData._id, { banner });
+            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify(banner));
         }
         if (type === "FAQ") {
             const { faq } = req.body;
@@ -83,6 +87,7 @@ exports.editLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
                 };
             }));
             await layout_model_1.default.findByIdAndUpdate(faqData?._id, { type: "FAQ", faq: faqItems });
+            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }));
         }
         res.status(200).json({
             success: true,
@@ -97,11 +102,21 @@ exports.editLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
 exports.getLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const { type } = req.params;
-        const layout = await layout_model_1.default.findOne({ type });
-        res.status(201).json({
-            success: true,
-            layout
-        });
+        const layoutData = await redis_1.redis.get(`Layout-${type}:-`);
+        if (layoutData) {
+            const layout = JSON.parse(layoutData);
+            res.status(201).json({
+                success: true,
+                layout
+            });
+        }
+        else {
+            const layout = await layout_model_1.default.findOne({ type });
+            res.status(201).json({
+                success: true,
+                layout
+            });
+        }
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 500));

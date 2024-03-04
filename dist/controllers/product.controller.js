@@ -72,7 +72,7 @@ exports.updateProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, res, 
                     url: result.secure_url,
                 });
             }
-            updatedData.images = [...product.images, ...newImagesLinks]; // Combine existing and new images
+            updatedData.images = [...product.images, ...newImagesLinks];
         }
         console.log(updatedData);
         // Handle image removal
@@ -151,7 +151,7 @@ exports.deleteShopProduct = (0, catchAsyncError_1.catchAsyncError)(async (req, r
 });
 exports.getAllProducts = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const products = await product_model_1.default.find().sort({ createdAt: 1, updatedAt: 1, });
+        const products = await product_model_1.default.find().sort({ createdAt: -1, updatedAt: -1, });
         res.status(201).json({
             success: true,
             products,

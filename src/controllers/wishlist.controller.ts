@@ -42,7 +42,6 @@ export const toggleWishlist = catchAsyncError(async (req: Request, res: Response
         const existingProductIndex = wishlist?.products.findIndex((p: any) => p?.product?._id.toString() === productId);
 
         if (existingProductIndex === -1) {
-            // wishlist.products.push(req.body);
             const product = await Product.findById(productId);
             if (!product) {
                 return next(new ErrorHandler("Product not found", 404));

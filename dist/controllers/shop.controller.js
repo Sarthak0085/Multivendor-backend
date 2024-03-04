@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserById = exports.getAllUsers = exports.getUserInfoById = exports.updatePassword = exports.deleteUserAddress = exports.updateUserAddress = exports.updateUserAvatar = exports.updateUserInfo = exports.deleteShopWithdrawMethods = exports.updateShopPayentmethods = exports.deleteShopByAdmin = exports.updateShopByAdmin = exports.getAllShopsByAdmin = exports.updateShopInfo = exports.updateShopAvatar = exports.resetShopPassword = exports.createResetToken = exports.forgotShopPassword = exports.getShopInfoById = exports.getShop = exports.updateSellerAccessToken = exports.logoutShop = exports.loginShop = exports.activateShop = exports.createActivationToken = exports.shopRegister = void 0;
+exports.deleteShopWithdrawMethods = exports.updateShopPayentmethods = exports.deleteShopByAdmin = exports.updateShopByAdmin = exports.getAllShopsByAdmin = exports.updateShopInfo = exports.updateShopAvatar = exports.resetShopPassword = exports.createResetToken = exports.forgotShopPassword = exports.getShopInfoById = exports.getShop = exports.updateSellerAccessToken = exports.logoutShop = exports.loginShop = exports.activateShop = exports.createActivationToken = exports.shopRegister = void 0;
 const catchAsyncError_1 = require("../middleware/catchAsyncError");
 const user_model_1 = __importDefault(require("../models/user.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
@@ -33,9 +33,6 @@ exports.shopRegister = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             folder: "shop_avatars",
             width: 150
         });
-        // const myCloud = await cloudinary.v2.uploader.upload(avatar, {
-        //     folder: "avatars",
-        // });
         const seller = {
             name: name,
             email: email,
@@ -98,7 +95,6 @@ exports.activateShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
         }
         console.log(newSeller?.seller);
         const { name, email, password, description, address, phoneNumber, pinCode, avatar } = newSeller.seller;
-        // console.log("name:", name, "->email:", email);
         const existUser = await shop_model_1.default.findOne({ email });
         if (existUser) {
             return next(new ErrorHandler_1.default("Email Already Exist", 400));
@@ -146,7 +142,7 @@ exports.loginShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-//logout user
+//logout shop
 exports.logoutShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         res.cookie("seller_access_token", "", { maxAge: 1 });
@@ -163,7 +159,6 @@ exports.logoutShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
 });
 // update access token
 exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    console.log("decoded: ");
     try {
         const seller_refresh_token = req.cookies.seller_refresh_token;
         const decoded = jsonwebtoken_1.default.verify(seller_refresh_token, process.env.SELLER_REFRESH_TOKEN);
@@ -171,8 +166,7 @@ exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (
         if (!decoded) {
             return next(new ErrorHandler_1.default("Could not refresh token", 400));
         }
-        const session = await redis_1.redis.get(decoded.id);
-        // console.log("see");
+        const session = await redis_1.redis.get(`shop-${decoded.id}`);
         if (!session) {
             return next(new ErrorHandler_1.default("Please login to access this resource!", 400));
         }
@@ -184,10 +178,6 @@ exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (
         res.cookie("seller_access_token", accessToken, jwt_1.accessTokenOptions);
         res.cookie("refresh_access_token", refreshToken, jwt_1.refreshTokenOptions);
         await redis_1.redis.set(`shop-${seller._id}:-`, JSON.stringify(seller), "EX", 604800); //expire after 7 days
-        // res.status(200).json({
-        //     message: "Successfully"
-        // })
-        console.log("seller");
         next();
     }
     catch (error) {
@@ -197,14 +187,24 @@ exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (
 // load shop
 exports.getShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const seller = await shop_model_1.default.findById(req?.seller._id);
-        if (!seller) {
-            return next(new ErrorHandler_1.default("Shop doesn't exists", 400));
+        const shopData = await redis_1.redis.get(`shop-${req?.seller?._id}:-`);
+        if (shopData) {
+            const seller = JSON.parse(shopData);
+            res.status(200).json({
+                success: true,
+                seller,
+            });
         }
-        res.status(200).json({
-            success: true,
-            seller,
-        });
+        else {
+            const seller = await shop_model_1.default.findById(req?.seller._id);
+            if (!seller) {
+                return next(new ErrorHandler_1.default("Shop doesn't exists", 400));
+            }
+            res.status(200).json({
+                success: true,
+                seller,
+            });
+        }
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 500));
@@ -212,11 +212,24 @@ exports.getShop = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) 
 });
 exports.getShopInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const shop = await shop_model_1.default.findById(req.params.id);
-        res.status(201).json({
-            success: true,
-            shop,
-        });
+        const shopData = await redis_1.redis.get(`shop-${req?.params?.id}:-`);
+        if (shopData) {
+            const seller = JSON.parse(shopData);
+            res.status(200).json({
+                success: true,
+                seller,
+            });
+        }
+        else {
+            const seller = await shop_model_1.default.findById(req?.params?.id);
+            if (!seller) {
+                return next(new ErrorHandler_1.default("Shop doesn't exists", 400));
+            }
+            res.status(200).json({
+                success: true,
+                seller,
+            });
+        }
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 500));
@@ -294,7 +307,7 @@ exports.resetShopPassword = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         seller.passwordResetExpires = undefined;
         seller.resetOtp = undefined;
         await seller.save();
-        await redis_1.redis.set(`Shop-${seller?._id}:-`, JSON.stringify(seller));
+        await redis_1.redis.set(`shop-${seller?._id}:-`, JSON.stringify(seller));
         res.status(200).json({
             success: true,
             message: 'Password Reset successful',
@@ -318,9 +331,8 @@ exports.updateShopAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, re
         }
         console.log(seller?.avatar.public_id);
         if (avatar && seller) {
-            // if user already have avatar
             if (seller?.avatar.public_id) {
-                cloudinary_1.default.v2.uploader.destroy(seller?.avatar.public_id);
+                await cloudinary_1.default.v2.uploader.destroy(seller?.avatar.public_id);
                 const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
                     folder: "shop_avatars",
                     width: 150
@@ -346,7 +358,7 @@ exports.updateShopAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, re
             return next(new ErrorHandler_1.default("Shop not found", 404));
         }
         await seller.save();
-        await redis_1.redis.set(`Shop-${shopId}:-`, JSON.stringify(seller));
+        await redis_1.redis.set(`shop-${shopId}:-`, JSON.stringify(seller));
         res.status(201).json({
             success: true,
             seller
@@ -383,7 +395,7 @@ exports.updateShopInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
             shop.pinCode = pinCode;
         }
         const updatedShop = await shop_model_1.default.findByIdAndUpdate(shopId, shop, { new: true });
-        await redis_1.redis.set(`Shop-${shopId}:-`, JSON.stringify(updatedShop));
+        await redis_1.redis.set(`shop-${shopId}:-`, JSON.stringify(updatedShop));
         res.status(201).json({
             success: true,
             shop: updatedShop,
@@ -413,6 +425,7 @@ exports.updateShopByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, r
         if (!seller) {
             return next(new ErrorHandler_1.default("Shop not found", 404));
         }
+        await redis_1.redis.set(`shop-${req.params.shopId}`, JSON.stringify(seller));
         res.status(201).json({
             success: true,
             seller,
@@ -429,6 +442,7 @@ exports.deleteShopByAdmin = (0, catchAsyncError_1.catchAsyncError)(async (req, r
             return next(new ErrorHandler_1.default("Shop not found", 404));
         }
         await shop_model_1.default.findByIdAndDelete(req.params.id);
+        await redis_1.redis.del(`shop-${req.params.id}:-`);
         res.status(201).json({
             success: true,
             message: "Shop deleted successfully!",
@@ -447,6 +461,10 @@ exports.updateShopPayentmethods = (0, catchAsyncError_1.catchAsyncError)(async (
             withdrawMethod,
         }, { new: true });
         console.log("shop: ", seller);
+        if (!seller) {
+            return next(new ErrorHandler_1.default("Shop not found", 404));
+        }
+        await redis_1.redis.set(`shop-${req.seller?._id}:-`, JSON.stringify(seller));
         res.status(201).json({
             success: true,
             seller,
@@ -465,235 +483,12 @@ exports.deleteShopWithdrawMethods = (0, catchAsyncError_1.catchAsyncError)(async
         else {
             shop.withdrawMethod = {};
             await shop.save();
+            await redis_1.redis.set(`shop-${req.seller?._id}:-`, JSON.stringify(shop));
             res.status(201).json({
                 success: true,
                 shop,
             });
         }
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-exports.updateUserInfo = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const { email, phoneNumber, fullName } = req.body;
-        const userId = req.user?._id;
-        const user = await user_model_1.default.findById(userId);
-        if (!user) {
-            return next(new ErrorHandler_1.default("User not found", 400));
-        }
-        if (fullName) {
-            user.fullName = fullName;
-        }
-        if (email) {
-            user.email = email;
-        }
-        if (phoneNumber) {
-            user.phoneNumber = phoneNumber;
-        }
-        const updatedUser = await user_model_1.default.findByIdAndUpdate(userId, user, { new: true });
-        // const isPasswordValid = await user.comparePassword(password);
-        // if (!isPasswordValid) {
-        //     return next(
-        //         new ErrorHandler("Please provide the correct information", 400)
-        //     );
-        // }
-        // user.fullName = fullName || user.fullName;
-        // user.email = email || user.email;
-        // user.phoneNumber = phoneNumber || user.phoneNumber;
-        // await user.save();
-        res.status(201).json({
-            success: true,
-            user: updatedUser,
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-exports.updateUserAvatar = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const { avatar } = req.body;
-        const userId = req.user?._id;
-        const user = await user_model_1.default.findById(userId);
-        if (avatar === null) {
-            return next(new ErrorHandler_1.default("Avatar not found", 400));
-        }
-        if (avatar && user) {
-            // if user already have avatar
-            if (user.avatar?.public_id) {
-                // first delete the old image
-                cloudinary_1.default.v2.uploader.destroy(user?.avatar?.public_id);
-                // then add other avatar
-                const myCloud = cloudinary_1.default.v2.uploader.upload(avatar, {
-                    folder: "avatars",
-                    width: 150
-                });
-                user.avatar = {
-                    public_id: (await myCloud).public_id,
-                    url: (await myCloud).secure_url
-                };
-            }
-            else {
-                const myCloud = cloudinary_1.default.v2.uploader.upload(avatar, {
-                    folder: "avatars",
-                    width: 150
-                });
-                user.avatar = {
-                    public_id: (await myCloud).public_id,
-                    url: (await myCloud).secure_url
-                };
-            }
-        }
-        await user?.save();
-        await redis_1.redis.set(userId, JSON.stringify(user));
-        res.status(201).json({
-            success: true,
-            user
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 400));
-    }
-});
-// // update user addresses
-// router.put(
-//     "/update-user-addresses",
-//     isAuthenticated,
-exports.updateUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const user = await user_model_1.default.findById(req.user?._id);
-        if (!user) {
-            return next(new ErrorHandler_1.default("User not found", 404));
-        }
-        const sameTypeAddress = user.addresses?.find((address) => address.addressType === req.body.addressType);
-        if (sameTypeAddress) {
-            return next(new ErrorHandler_1.default(`${req.body.addressType} address already exists`, 401));
-        }
-        user.addresses?.push(req.body);
-        // const existsAddress = user.addresses?.find(
-        //     (address) => address._id === req.body._id
-        // );
-        // if (existsAddress) {
-        //     Object.assign(existsAddress, req.body);
-        // } else {
-        //     // add the new address to the array
-        //     user.addresses?.push(req.body);
-        // }
-        await user.save();
-        res.status(200).json({
-            success: true,
-            user,
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-// // delete user address
-// router.delete(
-//     "/delete-user-address/:id",
-//     isAuthenticated,
-exports.deleteUserAddress = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const userId = req.user?._id;
-        const addressId = req.params.id;
-        await user_model_1.default.updateOne({
-            _id: userId,
-        }, { $pull: { addresses: { _id: addressId } } });
-        const user = await user_model_1.default.findById(userId);
-        res.status(200).json({ success: true, user });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-// // update user password
-// router.put(
-//     "/update-user-password",
-//     isAuthenticated,
-exports.updatePassword = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const { oldPassword, newPassword } = req.body;
-        const user = await user_model_1.default.findById(req.user?._id).select("+password");
-        if (!oldPassword || !newPassword) {
-            return next(new ErrorHandler_1.default("Please enter old and new password", 400));
-        }
-        if (user?.password === undefined) {
-            return next(new ErrorHandler_1.default("Invalid user", 400));
-        }
-        const isMatched = await user?.comparePassword(oldPassword);
-        if (!isMatched) {
-            return next(new ErrorHandler_1.default("Invalid old password", 400));
-        }
-        user.password = newPassword || user?.password;
-        await user?.save();
-        await redis_1.redis.set(req.user?._id, JSON.stringify(user));
-        res.status(201).json({
-            success: true,
-            message: "Password updated successfully"
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 400));
-    }
-});
-// // find user infoormation with the userId
-// router.get(
-//     "/user-info/:id",
-exports.getUserInfoById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const user = await user_model_1.default.findById(req.params.id);
-        res.status(201).json({
-            success: true,
-            user,
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-// // all users --- for admin
-// router.get(
-//     "/admin-all-users",
-//     isAuthenticated,
-//     isAdmin("Admin"),
-exports.getAllUsers = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const users = await user_model_1.default.find().sort({
-            createdAt: -1,
-        });
-        res.status(201).json({
-            success: true,
-            users,
-        });
-    }
-    catch (error) {
-        return next(new ErrorHandler_1.default(error.message, 500));
-    }
-});
-// // delete users --- admin
-// router.delete(
-//     "/delete-user/:id",
-//     isAuthenticated,
-//     isAdmin("Admin"),
-exports.deleteUserById = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
-    try {
-        const user = await user_model_1.default.findById(req.params.id);
-        if (!user) {
-            return next(new ErrorHandler_1.default("User not found", 404));
-        }
-        const imageId = user.avatar?.public_id;
-        if (imageId) {
-            await cloudinary_1.default.v2.uploader.destroy(imageId);
-            await user_model_1.default.findByIdAndDelete(req.params.id);
-        }
-        // await redis.del(id);
-        res.status(201).json({
-            success: true,
-            message: "User deleted successfully!",
-        });
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 500));

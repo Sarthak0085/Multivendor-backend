@@ -17,7 +17,6 @@ export const createOrder = catchAsyncError(async (req: Request, res: Response, n
     try {
         const { cart, shippingAddress, user, userId, totalPrice, paymentInfo } = req.body;
 
-        // group cart items by shopId
         const shopItemsMap = new Map();
 
         for (const item of cart.products) {
@@ -29,7 +28,6 @@ export const createOrder = catchAsyncError(async (req: Request, res: Response, n
             shopItemsMap.get(shopId).push(item);
         }
 
-        // create an order for each shop
         const orders = [];
 
         for (const [shopId, items] of shopItemsMap) {
@@ -167,10 +165,6 @@ export const updateOrderStatus = catchAsyncError(async (req: Request, res: Respo
     }
 });
 
-// interface IOrderRefundRequest {
-//     status: "Processing" | "Delivered" | "Shipping";
-// }
-
 // give a refund ----- user
 export const orderRefundRequest = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -196,9 +190,6 @@ export const orderRefundRequest = catchAsyncError(async (req: Request, res: Resp
     }
 });
 
-// interface IOrderRefundSuccess {
-//     status: "Processing" | "Delivered" | "Shipping";
-// }
 
 // accept the refund ---- seller
 export const orderRefundSuccess = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -248,7 +239,7 @@ export const orderRefundSuccess = catchAsyncError(async (req: Request, res: Resp
 export const getAllOrdersByAdmin = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const orders = await Order.find().sort({
-            createdAt: 1, updatedAt: 1,
+            createdAt: -1, updatedAt: -1,
         });
         res.status(201).json({
             success: true,

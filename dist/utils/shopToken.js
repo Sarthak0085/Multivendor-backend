@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendShopToken = exports.refreshTokenOptions = exports.accessTokenOptions = void 0;
+const redis_1 = require("./redis");
 const accessTokenExpires = parseInt(process.env.ACCESS_SHOP_TOKEN_EXPIRES || '120', 10);
 const refreshTokenExpires = parseInt(process.env.REFRESH_SHOP_TOKEN_EXPIRES || '360', 10);
 // options for cookies
@@ -24,7 +25,7 @@ const sendShopToken = (seller, statusCode, res) => {
     const accessToken = seller.SignAccessToken();
     const refreshToken = seller.SignRefreshToken();
     //upload session to redis 
-    // redis.set(seller._id, JSON.stringify(seller) as any);
+    redis_1.redis.set(`shop-${seller._id}:-`, JSON.stringify(seller));
     // only set secure to true in production
     if (process.env.NODE_ENV === 'Production') {
         exports.accessTokenOptions.secure = true;
