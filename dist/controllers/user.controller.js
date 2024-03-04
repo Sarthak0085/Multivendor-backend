@@ -86,7 +86,7 @@ exports.activateUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
         if (newUser.activationCode !== activation_code) {
             return next(new ErrorHandler_1.default('Invalid Activation Code', 400));
         }
-        const { fullName, email, password } = newUser.user;
+        const { fullName, email, password, avatar } = newUser.user;
         const existUser = await user_model_1.default.findOne({ email });
         if (existUser) {
             return next(new ErrorHandler_1.default("Email Already Exist", 400));
@@ -95,6 +95,7 @@ exports.activateUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             fullName,
             email,
             password,
+            avatar,
         });
         res.status(200).json({
             success: true,
@@ -228,6 +229,7 @@ exports.updateAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, r
 exports.getUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const userId = req.user?._id;
+        console.log(userId);
         (0, user_service_1.getUserById)(userId, res);
     }
     catch (error) {

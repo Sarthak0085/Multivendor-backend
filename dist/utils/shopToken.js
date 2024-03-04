@@ -9,7 +9,7 @@ exports.accessTokenOptions = {
     expires: new Date(Date.now() + accessTokenExpires * 60 * 1000),
     maxAge: accessTokenExpires * 60 * 1000,
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: "none"
 };
 console.log("access: ", exports.accessTokenOptions);
 exports.refreshTokenOptions = {
