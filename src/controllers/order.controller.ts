@@ -1,9 +1,3 @@
-// import ErrorHandler from "../utils/ErrorHandler.js";
-// import { catchAsyncErrors } from "../middleware/catchAsyncErrors.js";
-// import Order from "../model/order.js";
-// import Shop from "../model/shop.js";
-// import Product from "../model/product.js";
-
 import { NextFunction, Request, Response } from "express";
 import { catchAsyncError } from "../middleware/catchAsyncError";
 import Order from "../models/order.model";
@@ -11,6 +5,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import Product from "../models/product.model";
 import Shop from "../models/shop.model";
 import { IProductInCart } from "../models/cart.model";
+import sendEmail from "../utils/sendMail";
 
 // create new order
 export const createOrder = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
@@ -42,10 +37,24 @@ export const createOrder = catchAsyncError(async (req: Request, res: Response, n
             orders.push(order);
         }
 
-        res.status(201).json({
-            success: true,
-            orders,
-        });
+        const data1 = { user: { name: user.name } };
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: "Order Success",
+                template: "createOrderMail.ejs",
+                data: data1,
+            });
+
+            res.status(201).json({
+                success: true,
+                orders,
+            });
+
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 400));
+        };
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 400));
     }
@@ -129,8 +138,6 @@ export const updateOrderStatus = catchAsyncError(async (req: Request, res: Respo
             const serviceCharge = order.totalPrice * .10;
             await updateSellerInfo(order.totalPrice - serviceCharge);
         }
-
-        await order.save({ validateBeforeSave: false });
 
         res.status(200).json({
             success: true,

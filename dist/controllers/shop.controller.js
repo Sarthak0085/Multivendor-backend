@@ -166,7 +166,7 @@ exports.updateSellerAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (
         if (!decoded) {
             return next(new ErrorHandler_1.default("Could not refresh token", 400));
         }
-        const session = await redis_1.redis.get(`shop-${decoded.id}`);
+        const session = await redis_1.redis.get(`shop-${decoded.id}:-`);
         if (!session) {
             return next(new ErrorHandler_1.default("Please login to access this resource!", 400));
         }

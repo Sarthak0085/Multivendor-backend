@@ -1,9 +1,4 @@
 "use strict";
-// import ErrorHandler from "../utils/ErrorHandler.js";
-// import { catchAsyncErrors } from "../middleware/catchAsyncErrors.js";
-// import Order from "../model/order.js";
-// import Shop from "../model/shop.js";
-// import Product from "../model/product.js";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -14,6 +9,7 @@ const order_model_1 = __importDefault(require("../models/order.model"));
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const product_model_1 = __importDefault(require("../models/product.model"));
 const shop_model_1 = __importDefault(require("../models/shop.model"));
+const sendMail_1 = __importDefault(require("../utils/sendMail"));
 // create new order
 exports.createOrder = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
@@ -38,10 +34,23 @@ exports.createOrder = (0, catchAsyncError_1.catchAsyncError)(async (req, res, ne
             });
             orders.push(order);
         }
-        res.status(201).json({
-            success: true,
-            orders,
-        });
+        const data1 = { user: { name: user.name } };
+        try {
+            await (0, sendMail_1.default)({
+                email: user.email,
+                subject: "Order Success",
+                template: "createOrderMail.ejs",
+                data: data1,
+            });
+            res.status(201).json({
+                success: true,
+                orders,
+            });
+        }
+        catch (error) {
+            return next(new ErrorHandler_1.default(error.message, 400));
+        }
+        ;
     }
     catch (error) {
         return next(new ErrorHandler_1.default(error.message, 400));
@@ -118,7 +127,6 @@ exports.updateOrderStatus = (0, catchAsyncError_1.catchAsyncError)(async (req, r
             const serviceCharge = order.totalPrice * .10;
             await updateSellerInfo(order.totalPrice - serviceCharge);
         }
-        await order.save({ validateBeforeSave: false });
         res.status(200).json({
             success: true,
             order,
