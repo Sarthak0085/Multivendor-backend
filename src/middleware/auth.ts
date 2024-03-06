@@ -48,8 +48,8 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
         return next(new ErrorHandler("Access token is not valid", 400));
     }
 
-    const shop = await redis.get(`shop-${decoded.id}:-`);
-    // const shop = await Shop.findById(decoded.id)
+    const shop = await redis.get(`shop-${decoded.id}:-` as string);
+    // const shop = await Shop.findById(decoded.id)    
 
     if (!shop) {
         return next(new ErrorHandler("Please login to access this resource", 400));
