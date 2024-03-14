@@ -34,7 +34,7 @@ exports.createLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
                 }
             };
             await layout_model_1.default.create(banner);
-            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify({ banner: banner }));
+            // await redis.set(`Layout-${type}:-`, JSON.stringify({ banner: banner }))
         }
         if (type === "FAQ") {
             const { faq } = req.body;
@@ -45,7 +45,7 @@ exports.createLayout = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
                 };
             }));
             await layout_model_1.default.create({ type: "FAQ", faq: faqItems });
-            await redis_1.redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }));
+            // await redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }))
         }
         res.status(200).json({
             success: true,

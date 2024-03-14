@@ -147,6 +147,9 @@ exports.logoutUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
 exports.updateAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
         const refresh_token = req.cookies.refresh_token;
+        if (!refresh_token) {
+            return next(new ErrorHandler_1.default("Please login to access this", 400));
+        }
         const decoded = jsonwebtoken_1.default.verify(refresh_token, process.env.REFRESH_TOKEN);
         if (!decoded) {
             return next(new ErrorHandler_1.default("Could not refresh token", 400));

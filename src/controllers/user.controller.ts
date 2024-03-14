@@ -196,6 +196,11 @@ export const logoutUser = catchAsyncError(async (req: Request, res: Response, ne
 export const updateAccessToken = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const refresh_token = req.cookies.refresh_token as string;
+
+        if (!refresh_token) {
+            return next(new ErrorHandler("Please login to access this", 400));
+        }
+
         const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
 
         if (!decoded) {

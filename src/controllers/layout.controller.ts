@@ -33,7 +33,7 @@ export const createLayout = catchAsyncError(async (req: Request, res: Response, 
             }
 
             await LayoutModel.create(banner);
-            await redis.set(`Layout-${type}:-`, JSON.stringify({ banner: banner }))
+            // await redis.set(`Layout-${type}:-`, JSON.stringify({ banner: banner }))
         }
 
         if (type === "FAQ") {
@@ -49,7 +49,7 @@ export const createLayout = catchAsyncError(async (req: Request, res: Response, 
             )
 
             await LayoutModel.create({ type: "FAQ", faq: faqItems });
-            await redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }))
+            // await redis.set(`Layout-${type}:-`, JSON.stringify({ faq: faqItems }))
         }
 
         res.status(200).json({
