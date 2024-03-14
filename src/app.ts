@@ -4,7 +4,6 @@ import express, { NextFunction, Request, Response } from "express";
 import router from "./routes";
 import { ErrorMiddleware } from "./middleware/error";
 import morgan from "morgan";
-import path from "path";
 
 const app = express();
 
@@ -14,7 +13,7 @@ app.use(express.json({ limit: "50mb" }));
 // app.use('/mails', express.static(path.join(__dirname, 'mails')));
 
 app.use(cors({
-    origin: ["https://multivendor-frontend-self.vercel.app"],
+    origin: ["https://multivendor-frontend-self.vercel.app",],
     credentials: true
 }));
 
