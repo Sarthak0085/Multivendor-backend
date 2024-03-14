@@ -4,11 +4,11 @@ export interface IProductInWishlist {
     productId: mongoose.Types.ObjectId;
     shopId: mongoose.Types.ObjectId;
     addedAt: Date;
-    product: any;
     color: string;
+    size: string;
     price: number;
-    size?: string;
-    // category: string;
+    product: object;
+    // category?: string;
     // tags?: string;
     // name: string;
     // image: string;

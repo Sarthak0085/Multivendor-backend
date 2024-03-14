@@ -24,7 +24,7 @@ eventRouter.post("/create", updateSellerAccessToken, isSeller, createEvent);
 eventRouter.get("/get-event/:eventId", updateSellerAccessToken, isSeller, getEventById)
 
 // DELETE EVENT OF SHOP BY eventId
-eventRouter.delete("/delete-shop-event/:eventId", updateSellerAccessToken, isSeller, deleteShopEventById);
+// eventRouter.delete("/delete-shop-event/:eventId", updateSellerAccessToken, isSeller, deleteShopEventById);
 
 
 /******************* ADMIN ROUTES **************/

@@ -97,6 +97,7 @@ exports.activateUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, n
             password,
             avatar,
         });
+        // await redis.set(`user-${user?._id}:-`, JSON.stringify(user));
         res.status(200).json({
             success: true,
             user,

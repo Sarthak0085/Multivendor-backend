@@ -7,31 +7,12 @@ import Color from "../models/color.model";
 export const addNewColor = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { title } = req.body;
-        const newColor = await Color.create(title);
+        console.log(title);
+
+        const newColor = await Color.create({ title });
         res.status(201).json({
             success: true,
             newColor
-        });
-    } catch (error: any) {
-        return next(new ErrorHandler(error.message, 400));
-    }
-});
-
-// update color by admin
-export const updateColor = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    try {
-        const updatedColor = await Color.findByIdAndUpdate(id, req.body, {
-            new: true,
-        });
-
-        if (!updatedColor) {
-            return next(new ErrorHandler("Color not found", 404));
-        }
-
-        res.status(201).json({
-            success: true,
-            updatedColor
         });
     } catch (error: any) {
         return next(new ErrorHandler(error.message, 400));
@@ -54,21 +35,6 @@ export const deleteColor = catchAsyncError(async (req: Request, res: Response, n
         return next(new ErrorHandler(error.message, 400));
     }
 });
-
-// // get brand by id
-// export const getBrand = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-//     const { id } = req.params;
-//     try {
-//         const getBrand = await Brand.findById(id);
-//         if (!getBrand)
-//             res.status(201).json({
-//                 success: true,
-//                 getBrand
-//             });
-//     } catch (error: any) {
-//         return next(new ErrorHandler(error.message, 400));
-//     }
-// });
 
 // get all color
 export const getAllColor = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {

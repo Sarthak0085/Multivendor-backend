@@ -27,6 +27,9 @@ const cartSchema = new mongoose_1.default.Schema({
             size: {
                 type: String,
             },
+            gender: {
+                type: String,
+            },
             count: {
                 type: Number,
                 required: true,

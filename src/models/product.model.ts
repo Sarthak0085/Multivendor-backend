@@ -7,9 +7,11 @@ interface IProduct extends Document {
     tags?: string;
     originalPrice?: number;
     discountPrice?: number;
-    size?: string | number;
+    sizes: string[];
+    gender: string;
     stock: number;
     brand: string;
+    discountPercent?: number;
     colors: string[];
     images: {
         public_id: string;
@@ -46,12 +48,20 @@ const productSchema = new mongoose.Schema<IProduct>({
     tags: {
         type: String,
     },
+    gender: {
+        type: String,
+        required: [true, "Please Select a Gender"],
+    },
     brand: {
         type: String,
+        required: [true, "Please Select a Brand"],
     },
-    size: {
-        type: String,
-    },
+    sizes: [
+        {
+            type: String,
+            required: [true, "Please Select the Sizes."],
+        }
+    ],
     originalPrice: {
         type: Number,
         required: [true, "Please enter a original price."],
@@ -59,10 +69,6 @@ const productSchema = new mongoose.Schema<IProduct>({
     discountPrice: {
         type: Number,
     },
-    // price: {
-    //     type: Number,
-    //     required: [true, "Please enter a Price"],
-    // },
     stock: {
         type: Number,
         required: [true, "Please enter your product stock!"],

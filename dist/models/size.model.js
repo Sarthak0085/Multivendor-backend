@@ -4,13 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
-const colorSchema = new mongoose_1.default.Schema({
+const sizeSchema = new mongoose_1.default.Schema({
     title: {
         type: String,
-        required: [true, "Color is required"],
-    }
+        required: [true, "Size Name is required"],
+    },
+    symbol: {
+        type: String,
+        required: [true, "Size Symbol is required"],
+    },
 }, {
     timestamps: true,
 });
-const Color = mongoose_1.default.model("Color", colorSchema);
-exports.default = Color;
+const Size = mongoose_1.default.model("Size", sizeSchema);
+exports.default = Size;

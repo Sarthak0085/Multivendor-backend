@@ -17,6 +17,7 @@ import productRouter from "./product.route";
 import layoutRouter from "./layout.route";
 import orderRouter from "./order.route";
 import analyticsRouter from "./analytics.route";
+import sizeRouter from "./size.route";
 
 const router = Router();
 
@@ -61,6 +62,9 @@ router.use("/brand", brandRouter);
 
 // FOR COLOR ROUTES
 router.use("/color", colorRouter);
+
+// FOR SIZE ROUTES
+router.use("/size", sizeRouter);
 
 // FOR CART ROUTER
 router.use("/cart", cartRouter);

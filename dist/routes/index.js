@@ -22,6 +22,7 @@ const product_route_1 = __importDefault(require("./product.route"));
 const layout_route_1 = __importDefault(require("./layout.route"));
 const order_route_1 = __importDefault(require("./order.route"));
 const analytics_route_1 = __importDefault(require("./analytics.route"));
+const size_route_1 = __importDefault(require("./size.route"));
 const router = (0, express_1.Router)();
 // FOR AUTH ROUTES
 router.use("/auth", auth_route_1.default);
@@ -51,6 +52,8 @@ router.use("/category", category_route_1.default);
 router.use("/brand", brand_route_1.default);
 // FOR COLOR ROUTES
 router.use("/color", color_route_1.default);
+// FOR SIZE ROUTES
+router.use("/size", size_route_1.default);
 // FOR CART ROUTER
 router.use("/cart", cart_route_1.default);
 // FOR WISHLIST ROUTER

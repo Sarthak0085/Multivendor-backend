@@ -9,6 +9,7 @@ export interface IProductInCart {
     count: number;
     size?: string;
     price: number;
+    gender?: string;
     product: object;
 }
 
@@ -43,6 +44,9 @@ const cartSchema = new mongoose.Schema<ICart>({
                 required: true,
             },
             size: {
+                type: String,
+            },
+            gender: {
                 type: String,
             },
             count: {

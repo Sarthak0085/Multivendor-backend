@@ -6,20 +6,15 @@ interface IColor extends Document {
     updatedAt?: Date;
 }
 
-// Declare the Schema of the Mongo model
-var colorSchema = new mongoose.Schema<IColor>(
-    {
-        title: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true,
-        },
-    },
-    {
-        timestamps: true,
+const colorSchema = new mongoose.Schema<IColor>({
+    title: {
+        type: String,
+        required: [true, "Color is required"],
     }
-);
+}, {
+    timestamps: true,
+})
 
 const Color: Model<IColor> = mongoose.model("Color", colorSchema);
+
 export default Color;

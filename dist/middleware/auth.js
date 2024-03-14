@@ -29,9 +29,9 @@ exports.isSeller = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next)
     if (!seller_access_token) {
         return next(new ErrorHandler_1.default("Please login to access this", 400));
     }
-    console.log(seller_access_token);
+    // console.log(seller_access_token);
     const decoded = jsonwebtoken_1.default.verify(seller_access_token, process.env.SELLER_ACCESS_TOKEN);
-    console.log(decoded);
+    // console.log(decoded);
     if (!decoded) {
         return next(new ErrorHandler_1.default("Access token is not valid", 400));
     }

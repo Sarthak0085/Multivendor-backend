@@ -13,7 +13,7 @@ const user_model_1 = __importDefault(require("../models/user.model"));
 // Controller function to toggle adding/removing products to/from the wishlist
 exports.toggleWishlist = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
-        const { productId, shopId, color, price } = req.body;
+        const { productId, shopId, color, price, size } = req.body;
         const userId = req.user?._id;
         console.log(productId);
         const user = await user_model_1.default.findById(userId);
@@ -41,7 +41,7 @@ exports.toggleWishlist = (0, catchAsyncError_1.catchAsyncError)(async (req, res,
             if (!product) {
                 return next(new ErrorHandler_1.default("Product not found", 404));
             }
-            wishlist?.products.push({ shopId, product, color, price });
+            wishlist?.products.push({ shopId, product, color, price, size });
         }
         else {
             wishlist.products.splice(existingProductIndex, 1);

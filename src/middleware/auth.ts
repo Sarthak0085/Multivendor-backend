@@ -37,12 +37,12 @@ export const isSeller = catchAsyncError(async (req: Request, res: Response, next
         return next(new ErrorHandler("Please login to access this", 400));
     }
 
-    console.log(seller_access_token);
+    // console.log(seller_access_token);
 
 
     const decoded = jwt.verify(seller_access_token, process.env.SELLER_ACCESS_TOKEN as string) as JwtPayload;
 
-    console.log(decoded);
+    // console.log(decoded);
 
     if (!decoded) {
         return next(new ErrorHandler("Access token is not valid", 400));

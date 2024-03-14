@@ -20,12 +20,20 @@ const productSchema = new mongoose_1.default.Schema({
     tags: {
         type: String,
     },
+    gender: {
+        type: String,
+        required: [true, "Please Select a Gender"],
+    },
     brand: {
         type: String,
+        required: [true, "Please Select a Brand"],
     },
-    size: {
-        type: String,
-    },
+    sizes: [
+        {
+            type: String,
+            required: [true, "Please Select the Sizes."],
+        }
+    ],
     originalPrice: {
         type: Number,
         required: [true, "Please enter a original price."],
@@ -33,10 +41,6 @@ const productSchema = new mongoose_1.default.Schema({
     discountPrice: {
         type: Number,
     },
-    // price: {
-    //     type: Number,
-    //     required: [true, "Please enter a Price"],
-    // },
     stock: {
         type: Number,
         required: [true, "Please enter your product stock!"],

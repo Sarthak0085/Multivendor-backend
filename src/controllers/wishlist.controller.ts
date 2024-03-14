@@ -9,7 +9,7 @@ import User from "../models/user.model";
 // Controller function to toggle adding/removing products to/from the wishlist
 export const toggleWishlist = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { productId, shopId, color, price } = req.body as IProductInWishlist;
+        const { productId, shopId, color, price, size } = req.body as IProductInWishlist;
         const userId = req.user?._id;
         console.log(productId);
 
@@ -46,7 +46,7 @@ export const toggleWishlist = catchAsyncError(async (req: Request, res: Response
             if (!product) {
                 return next(new ErrorHandler("Product not found", 404));
             }
-            wishlist?.products.push({ shopId, product, color, price });
+            wishlist?.products.push({ shopId, product, color, price, size });
         } else {
             wishlist.products.splice(existingProductIndex, 1);
         }

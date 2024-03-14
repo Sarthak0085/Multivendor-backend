@@ -39,6 +39,14 @@ export const createProduct = catchAsyncError(async (req: Request, res: Response,
             productData.images = imagesLinks;
             productData.shop = shop;
 
+            const originalPrice = productData.originalPrice;
+            const discountPrice = productData.discountPrice;
+
+            if (originalPrice && discountPrice && discountPrice < originalPrice) {
+                const discountPercent = (1 - (discountPrice / originalPrice)) * 100;
+                productData.discountPercent = discountPercent;
+            }
+
             const product = await Product.create(productData);
 
             res.status(201).json({
@@ -55,7 +63,7 @@ export const createProduct = catchAsyncError(async (req: Request, res: Response,
 export const updateProduct = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         const productId = req.body.productId;
-        console.log(req.body);
+        // console.log(req.body);
 
         const updatedData = req.body;
         const product = await Product.findById(productId);
@@ -77,9 +85,6 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
             updatedData.images = [...product.images, ...newImagesLinks];
         }
 
-
-        console.log(updatedData);
-
         // Handle image removal
         if (product.images && updatedData.images) {
             // Filter out images that are no longer present in the updated images array
@@ -91,7 +96,15 @@ export const updateProduct = catchAsyncError(async (req: Request, res: Response,
             }
         }
 
-        // // Update other fields
+        const originalPrice = updatedData.originalPrice;
+        const discountPrice = updatedData.discountPrice;
+
+        if (originalPrice && discountPrice && discountPrice < originalPrice) {
+            const discountPercent = (1 - (discountPrice / originalPrice)) * 100;
+            updatedData.discountPercent = discountPercent;
+        }
+
+        // Update other fields
         product.set(updatedData);
 
         // // Save the updated product
@@ -164,10 +177,89 @@ export const deleteShopProduct = catchAsyncError(async (req: Request, res: Respo
     }
 });
 
+interface FilterQuery {
+    category?: string;
+    gender?: string;
+    brand?: string;
+    colors?: string;
+    sizes?: string;
+    prices?: string;
+    discounts?: string;
+    sort?: string;
+}
 
 export const getAllProducts = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const products = await Product.find().sort({ createdAt: -1, updatedAt: -1, });
+        const { category, gender, brand, colors, sizes, prices, discounts, sort } = req.query as FilterQuery;
+        // console.log("category :", category === "");
+
+        let filters: any = {};
+
+        if (typeof category === "string" && category !== "") {
+            filters.category = { $in: category.split(',') };
+        }
+        if (typeof gender === "string" && gender !== "") {
+            filters.gender = { $in: gender.split(',') };
+        }
+        if (typeof brand === "string" && brand !== "") {
+            filters.brand = { $in: brand.split(',') };
+        }
+        if (typeof colors === "string" && colors !== "") {
+            filters.colors = { $in: colors.split(',') };
+        }
+        if (typeof sizes === "string" && sizes !== "") {
+            filters.sizes = { $in: sizes.split(',') };
+        }
+        if (typeof prices === "string" && prices !== "") {
+            if (prices.includes("+")) {
+                const minPriceStr = prices.replace("+", "");
+                const minPrice = parseInt(minPriceStr, 10);
+                filters.discountPrice = { $gte: minPrice };
+            } else {
+                const [minPriceStr, maxPriceStr] = prices.split('-');
+                const minPrice = parseInt(minPriceStr, 10);
+                const maxPrice = parseInt(maxPriceStr, 10);
+                filters.discountPrice = { $gte: minPrice, $lte: maxPrice };
+            }
+        }
+        if (typeof discounts === "string" && discounts !== "") {
+            const [minDiscountStr, maxDiscountStr] = discounts.split('-');
+            const minDiscount = parseInt(minDiscountStr, 10);
+            const maxDiscount = parseInt(maxDiscountStr, 10);
+
+            filters.discountPercent = { $gte: minDiscount, $lte: maxDiscount };
+        }
+
+        let sortBy: any = {};
+        if (sort && sort !== "") {
+            switch (sort) {
+                case 'Price: Low To High':
+                    sortBy = { discountPrice: 1 };
+                    break;
+                case 'Price: High To Low':
+                    sortBy = { discountPrice: -1 };
+                    break;
+                case 'Discount':
+                    sortBy = { discountPercent: -1 };
+                    break;
+                case 'New Arrivals':
+                    sortBy = { createdAt: -1 };
+                    break;
+                case 'Random':
+                    sortBy = { $sample: { size: 10000 } };
+                    break;
+                case 'Rating':
+                    sortBy = { rating: -1 };
+                    break;
+                default:
+                    sortBy = { createdAt: -1 };
+                    break;
+            }
+        } else {
+            sortBy = { sold_out: -1 };
+        }
+
+        const products = await Product.find(filters).sort(sortBy);
 
         res.status(201).json({
             success: true,
