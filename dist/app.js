@@ -13,14 +13,14 @@ const app = (0, express_1.default)();
 //middlewares
 app.use(express_1.default.json({ limit: "50mb" }));
 // app.use('/mails', express.static(path.join(__dirname, 'mails')));
-// app.use(cors({
-//     origin: ["https://multivendor-frontend-self.vercel.app"],
-//     credentials: true
-// }));
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:5173'],
+    origin: ['https://multivendor-frontend-self.vercel.app'],
     credentials: true
 }));
+// app.use(cors({
+//     origin: ['http://localhost:5173'],
+//     credentials: true
+// }));
 app.use((0, morgan_1.default)('tiny'));
 //remove it in production
 app.use((0, cookie_parser_1.default)(process.env.COOKIE_SECRET));
