@@ -195,6 +195,8 @@ export const logoutUser = catchAsyncError(async (req: Request, res: Response, ne
 // update access token
 export const updateAccessToken = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log(req.cookies);
+
         const refresh_token = req.cookies.refresh_token as string;
 
         if (!refresh_token) {

@@ -9,23 +9,27 @@ exports.accessTokenOptions = {
     expires: new Date(Date.now() + accessTokenExpires * 60 * 1000),
     maxAge: accessTokenExpires * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === 'Production' ? true : false,
 };
 exports.refreshTokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 24 * 60 * 60 * 1000),
     maxAge: refreshTokenExpires * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === 'Production' ? true : false,
 };
-const sendToken = (user, statusCode, res) => {
+const sendToken = async (user, statusCode, res) => {
     const accessToken = user.SignAccessToken();
     const refreshToken = user.SignRefreshToken();
     //upload session to redis 
-    redis_1.redis.set(`user-${user._id}:-`, JSON.stringify(user));
+    await redis_1.redis.set(`user-${user?._id}:-`, JSON.stringify(user));
     // only set secure to true in production
-    if (process.env.NODE_ENV === 'Production') {
-        exports.accessTokenOptions.secure = true;
-    }
+    // if (process.env.NODE_ENV === 'Production') {
+    //     accessTokenOptions.secure = true;
+    // } else {
+    //     accessTokenOptions.secure = false;
+    // }
     res.cookie("access_token", accessToken, exports.accessTokenOptions);
     res.cookie("refresh_token", refreshToken, exports.refreshTokenOptions);
     res.status(statusCode).json({

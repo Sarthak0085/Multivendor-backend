@@ -146,6 +146,7 @@ exports.logoutUser = (0, catchAsyncError_1.catchAsyncError)(async (req, res, nex
 // update access token
 exports.updateAccessToken = (0, catchAsyncError_1.catchAsyncError)(async (req, res, next) => {
     try {
+        console.log(req.cookies);
         const refresh_token = req.cookies.refresh_token;
         if (!refresh_token) {
             return next(new ErrorHandler_1.default("Please login to access this", 400));

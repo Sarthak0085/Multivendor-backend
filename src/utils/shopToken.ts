@@ -19,7 +19,8 @@ export const accessTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 60 * 1000),
     maxAge: accessTokenExpires * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === 'Production' ? true : false,
 }
 
 
@@ -27,20 +28,21 @@ export const refreshTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 24 * 60 * 60 * 1000),
     maxAge: refreshTokenExpires * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === 'Production' ? true : false,
 }
 
-export const sendShopToken = (seller: IShop, statusCode: number, res: Response) => {
+export const sendShopToken = async (seller: IShop, statusCode: number, res: Response) => {
     const accessToken = seller.SignAccessToken();
     const refreshToken = seller.SignRefreshToken();
 
     //upload session to redis 
-    redis.set(`shop-${seller._id}:-`, JSON.stringify(seller));
+    await redis.set(`shop-${seller._id}:-`, JSON.stringify(seller));
 
     // only set secure to true in production
-    if (process.env.NODE_ENV === 'Production') {
-        accessTokenOptions.secure = true;
-    }
+    // if (process.env.NODE_ENV === 'Production') {
+    //     accessTokenOptions.secure = true;
+    // }
 
     res.cookie("seller_access_token", accessToken, accessTokenOptions);
     res.cookie("seller_refresh_token", refreshToken, refreshTokenOptions);
