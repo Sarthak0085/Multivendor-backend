@@ -6,8 +6,8 @@ interface ITokenOptions {
     expires: Date,
     maxAge: number,
     httpOnly: boolean,
-    sameSite: 'lax' | 'strict' | 'none' | undefined,
-    secure?: boolean
+    sameSite: 'lax' | 'strict' | 'none',
+    secure: boolean
 }
 
 const accessTokenExpires = parseInt(process.env.ACCESS_SHOP_TOKEN_EXPIRES || '120', 10);
@@ -19,7 +19,7 @@ export const accessTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 60 * 1000),
     maxAge: accessTokenExpires * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === 'Production' ? "none" : "lax",
     secure: process.env.NODE_ENV === 'Production' ? true : false,
 }
 
@@ -28,7 +28,7 @@ export const refreshTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 24 * 60 * 60 * 1000),
     maxAge: refreshTokenExpires * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === 'Production' ? "none" : "lax",
     secure: process.env.NODE_ENV === 'Production' ? true : false,
 }
 
@@ -38,11 +38,6 @@ export const sendShopToken = async (seller: IShop, statusCode: number, res: Resp
 
     //upload session to redis 
     await redis.set(`shop-${seller._id}:-`, JSON.stringify(seller));
-
-    // only set secure to true in production
-    // if (process.env.NODE_ENV === 'Production') {
-    //     accessTokenOptions.secure = true;
-    // }
 
     res.cookie("seller_access_token", accessToken, accessTokenOptions);
     res.cookie("seller_refresh_token", refreshToken, refreshTokenOptions);

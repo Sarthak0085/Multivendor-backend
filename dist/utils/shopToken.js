@@ -9,14 +9,14 @@ exports.accessTokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 60 * 1000),
     maxAge: accessTokenExpires * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === 'Production' ? "none" : "lax",
     secure: process.env.NODE_ENV === 'Production' ? true : false,
 };
 exports.refreshTokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpires * 24 * 60 * 60 * 1000),
     maxAge: refreshTokenExpires * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === 'Production' ? "none" : "lax",
     secure: process.env.NODE_ENV === 'Production' ? true : false,
 };
 const sendShopToken = async (seller, statusCode, res) => {
@@ -24,10 +24,6 @@ const sendShopToken = async (seller, statusCode, res) => {
     const refreshToken = seller.SignRefreshToken();
     //upload session to redis 
     await redis_1.redis.set(`shop-${seller._id}:-`, JSON.stringify(seller));
-    // only set secure to true in production
-    // if (process.env.NODE_ENV === 'Production') {
-    //     accessTokenOptions.secure = true;
-    // }
     res.cookie("seller_access_token", accessToken, exports.accessTokenOptions);
     res.cookie("seller_refresh_token", refreshToken, exports.refreshTokenOptions);
     res.status(statusCode).json({
