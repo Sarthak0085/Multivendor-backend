@@ -1,3 +1,10 @@
 {
-    "rewrites": [{ "source": "/src/(.*)", "destination": "/dist" }]
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/(.*)",
+      "use": "@vercel/node"
+    }
+  ],
+  "output": "/dist" 
 }
