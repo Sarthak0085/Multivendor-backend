@@ -14,7 +14,7 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json({ limit: "50mb" }));
 // app.use('/mails', express.static(path.join(__dirname, 'mails')));
 app.use((0, cors_1.default)({
-    origin: ['https://multivendor-frontend-self.vercel.app'],
+    origin: ['https://multivendor-frontend-self.vercel.app', 'https://multivendor-frontend.onrender.com'],
     credentials: true
 }));
 // app.use(cors({
