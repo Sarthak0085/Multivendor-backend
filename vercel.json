@@ -4,7 +4,7 @@
     { "src": "src/index.ts", "use": "@vercel/node" }
   ],
   "routes": [
-    { "handle": "src/index.ts", "src": "/(.*)", "method": "GET" }
+    { "src": "/(.*)", "dest": "src/index.ts" }
   ]
 }
 
